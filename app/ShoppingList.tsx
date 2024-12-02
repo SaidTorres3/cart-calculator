@@ -10,6 +10,9 @@ import {
   Animated,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
+import { OPENAI_API_KEY } from '../config';
 
 interface Item {
   id: string;
@@ -25,7 +28,129 @@ export default function ShoppingList() {
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
   const rainbowAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    (async () => {
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+    })();
+  }, []);
+
+  const startRecording = async () => {
+    try {
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      setRecording(recording);
+      setIsRecording(true);
+    } catch (err) {
+      Alert.alert('Error', 'Failed to start recording');
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recording) return;
+
+    try {
+      setIsRecording(false);
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      setRecording(null);
+
+      if (uri) {
+        // Convert audio to base64
+        const base64Audio = await FileSystem.readAsStringAsync(uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        // Create form data for the API request
+        const formData = new FormData();
+        formData.append('file', {
+          name: 'audio.wav',
+          type: 'audio/wav',
+          uri,
+        } as any);
+        formData.append('model', 'whisper-1');
+
+        // Transcribe with Whisper using fetch
+        const transcriptionResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          },
+          body: formData,
+        });
+
+        const transcriptionData = await transcriptionResponse.json();
+        
+        if (!transcriptionResponse.ok) {
+          throw new Error('Transcription failed');
+        }
+
+        // Process with GPT-4 using fetch
+        const completionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "system",
+                content: `Convert the shopping item description into JSON format with the following structure:
+                {
+                  "product": string,
+                  "quantity": string (number),
+                  "price": string (number)
+                }
+                Example: "add three bananas that cost seven dollars each" should become:
+                {
+                  "product": "bananas",
+                  "quantity": "3",
+                  "price": "7"
+                }`
+              },
+              {
+                role: "user",
+                content: transcriptionData.text
+              }
+            ]
+          })
+        });
+
+        const completionData = await completionResponse.json();
+        
+        if (!completionResponse.ok) {
+          throw new Error('GPT processing failed');
+        }
+
+        // Parse the JSON response
+        const result = JSON.parse(completionData.choices[0].message.content);
+        
+        // Add the item
+        const newItem: Item = {
+          id: Date.now().toString(),
+          product: result.product,
+          quantity: result.quantity,
+          price: result.price,
+          visible: true,
+        };
+
+        setItems([...items, newItem]);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      Alert.alert('Error', 'Failed to process voice command');
+    }
+  };
 
   const productRef = useRef<TextInput>(null);
   const priceRef = useRef<TextInput>(null);
@@ -281,6 +406,9 @@ export default function ShoppingList() {
             <MaterialIcons name="add" size={24} color="white" />
           </TouchableOpacity>
         )}
+        <TouchableOpacity style={styles.recordButton} onPress={isRecording ? stopRecording : startRecording}>
+          <MaterialIcons name={isRecording ? "stop" : "mic"} size={24} color="white" />
+        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -395,6 +523,15 @@ const styles = StyleSheet.create({
   editButtonsContainer: {
     flexDirection: 'row',
     gap: 10,
+  },
+  recordButton: {
+    backgroundColor: '#1976D2',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 44,
+    height: 44,
   },
   hiddenItem: {
     opacity: 0.5,
