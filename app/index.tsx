@@ -1,15 +1,17 @@
-import { Text, View } from "react-native";
+import { SafeAreaView, StyleSheet } from "react-native";
+import ShoppingList from "./ShoppingList";
 
 export default function Index() {
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Text>Edit app/index.tsx to edit this screen.</Text>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <ShoppingList />
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+});
