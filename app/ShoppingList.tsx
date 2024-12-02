@@ -158,57 +158,62 @@ export default function ShoppingList() {
     });
 
     return (
-      <Animated.View
-        style={[
-          styles.item,
-          !item.visible && styles.hiddenItem,
-          isEditing && {
-            borderWidth: 2,
-            borderColor: borderColor,
-          }
-        ]}
+      <TouchableOpacity
+        onPress={() => startEditing(item)}
+        activeOpacity={0.7}
       >
-        <View style={styles.itemInfo}>
-          <View style={styles.textContainer}>
-            <Text style={[styles.itemText, !item.visible && styles.hiddenText]} numberOfLines={2}>
-              {item.product}
-            </Text>
-            <View style={styles.quantityPriceContainer}>
-              <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
-                {item.quantity}x
+        <Animated.View
+          style={[
+            styles.item,
+            !item.visible && styles.hiddenItem,
+            isEditing && {
+              borderWidth: 2,
+              borderColor: borderColor,
+            }
+          ]}
+        >
+          <View style={styles.itemInfo}>
+            <View style={styles.textContainer}>
+              <Text style={[styles.itemText, !item.visible && styles.hiddenText]} numberOfLines={2}>
+                {item.product}
               </Text>
-              <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>•</Text>
-              <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
-                ${item.price}
-              </Text>
+              <View style={styles.quantityPriceContainer}>
+                <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
+                  {item.quantity}x
+                </Text>
+                <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>•</Text>
+                <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
+                  ${item.price}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.visibilityButton]}
-            onPress={() => toggleVisibility(item.id)}
-          >
-            <MaterialIcons 
-              name={item.visible ? "visibility" : "visibility-off"} 
-              size={20} 
-              color="white" 
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.editButton]}
-            onPress={() => startEditing(item)}
-          >
-            <MaterialIcons name="edit" size={20} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.removeButton]}
-            onPress={() => removeItem(item.id)}
-          >
-            <MaterialIcons name="delete" size={20} color="white" />
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.visibilityButton]}
+              onPress={(e) => {
+                e.stopPropagation();
+                toggleVisibility(item.id);
+              }}
+            >
+              <MaterialIcons 
+                name={item.visible ? "visibility" : "visibility-off"} 
+                size={20} 
+                color="white" 
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.removeButton]}
+              onPress={(e) => {
+                e.stopPropagation();
+                removeItem(item.id);
+              }}
+            >
+              <MaterialIcons name="delete" size={20} color="white" />
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+      </TouchableOpacity>
     );
   };
 
@@ -357,9 +362,6 @@ const styles = StyleSheet.create({
   },
   visibilityButton: {
     backgroundColor: '#1976D2',
-  },
-  editButton: {
-    backgroundColor: '#2E7D32',
   },
   removeButton: {
     backgroundColor: '#C62828',
