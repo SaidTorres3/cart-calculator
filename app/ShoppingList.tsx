@@ -185,6 +185,10 @@ export default function ShoppingList() {
                 <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
                   ${item.price}
                 </Text>
+                <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>•</Text>
+                <Text style={[styles.subtotalText, !item.visible && styles.hiddenText]}>
+                  ${(parseFloat(item.price) * parseFloat(item.quantity)).toFixed(2)}
+                </Text>
               </View>
             </View>
           </View>
@@ -346,6 +350,11 @@ const styles = StyleSheet.create({
   itemText: {
     fontSize: 16,
     color: '#fff',
+  },
+  subtotalText: {
+    fontSize: 16,
+    color: '#4CAF50',
+    fontWeight: 'bold',
   },
   buttonContainer: {
     flexDirection: 'row',
