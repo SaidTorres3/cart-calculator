@@ -119,17 +119,20 @@ export default function ShoppingList() {
   const renderItem = ({ item }: { item: Item }) => (
     <View style={[styles.item, !item.visible && styles.hiddenItem]}>
       <View style={styles.itemInfo}>
-        <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
-          {item.product}
-        </Text>
-        <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>•</Text>
-        <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
-          {item.quantity}x
-        </Text>
-        <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>•</Text>
-        <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
-          ${item.price}
-        </Text>
+        <View style={styles.textContainer}>
+          <Text style={[styles.itemText, !item.visible && styles.hiddenText]} numberOfLines={2}>
+            {item.product}
+          </Text>
+          <View style={styles.quantityPriceContainer}>
+            <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
+              {item.quantity}x
+            </Text>
+            <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>•</Text>
+            <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
+              ${item.price}
+            </Text>
+          </View>
+        </View>
       </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity
@@ -268,13 +271,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   itemInfo: {
+    flex: 1,
+    marginRight: 10,
+  },
+  textContainer: {
+    flex: 1,
+    gap: 4,
+  },
+  quantityPriceContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
-    gap: 8,
+    gap: 4,
   },
   itemText: {
     fontSize: 16,
@@ -283,6 +293,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     gap: 8,
+    flexShrink: 0,
   },
   actionButton: {
     padding: 8,
