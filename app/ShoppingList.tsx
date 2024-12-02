@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   FlatList,
   StyleSheet,
   Alert,
+  Animated,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -24,10 +25,36 @@ export default function ShoppingList() {
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const rainbowAnim = useRef(new Animated.Value(0)).current;
 
   const productRef = useRef<TextInput>(null);
   const priceRef = useRef<TextInput>(null);
   const quantityRef = useRef<TextInput>(null);
+
+  const startRainbowAnimation = () => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(rainbowAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: false,
+        }),
+        Animated.timing(rainbowAnim, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: false,
+        }),
+      ])
+    ).start();
+  };
+
+  useEffect(() => {
+    if (editingId) {
+      startRainbowAnimation();
+    } else {
+      rainbowAnim.setValue(0);
+    }
+  }, [editingId]);
 
   const addItem = () => {
     if (!product || !price) {
@@ -116,50 +143,74 @@ export default function ShoppingList() {
       .toFixed(2);
   };
 
-  const renderItem = ({ item }: { item: Item }) => (
-    <View style={[styles.item, !item.visible && styles.hiddenItem]}>
-      <View style={styles.itemInfo}>
-        <View style={styles.textContainer}>
-          <Text style={[styles.itemText, !item.visible && styles.hiddenText]} numberOfLines={2}>
-            {item.product}
-          </Text>
-          <View style={styles.quantityPriceContainer}>
-            <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
-              {item.quantity}x
+  const renderItem = ({ item }: { item: Item }) => {
+    const isEditing = item.id === editingId;
+    const borderColor = rainbowAnim.interpolate({
+      inputRange: [0, 0.2, 0.4, 0.6, 0.8, 1],
+      outputRange: [
+        '#ff0000',
+        '#ffa500',
+        '#ffff00',
+        '#008000',
+        '#0000ff',
+        '#4b0082'
+      ]
+    });
+
+    return (
+      <Animated.View
+        style={[
+          styles.item,
+          !item.visible && styles.hiddenItem,
+          isEditing && {
+            borderWidth: 2,
+            borderColor: borderColor,
+          }
+        ]}
+      >
+        <View style={styles.itemInfo}>
+          <View style={styles.textContainer}>
+            <Text style={[styles.itemText, !item.visible && styles.hiddenText]} numberOfLines={2}>
+              {item.product}
             </Text>
-            <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>•</Text>
-            <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
-              ${item.price}
-            </Text>
+            <View style={styles.quantityPriceContainer}>
+              <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
+                {item.quantity}x
+              </Text>
+              <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>•</Text>
+              <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
+                ${item.price}
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.visibilityButton]}
-          onPress={() => toggleVisibility(item.id)}
-        >
-          <MaterialIcons 
-            name={item.visible ? "visibility" : "visibility-off"} 
-            size={20} 
-            color="white" 
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.editButton]}
-          onPress={() => startEditing(item)}
-        >
-          <MaterialIcons name="edit" size={20} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.removeButton]}
-          onPress={() => removeItem(item.id)}
-        >
-          <MaterialIcons name="delete" size={20} color="white" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.visibilityButton]}
+            onPress={() => toggleVisibility(item.id)}
+          >
+            <MaterialIcons 
+              name={item.visible ? "visibility" : "visibility-off"} 
+              size={20} 
+              color="white" 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.editButton]}
+            onPress={() => startEditing(item)}
+          >
+            <MaterialIcons name="edit" size={20} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.removeButton]}
+            onPress={() => removeItem(item.id)}
+          >
+            <MaterialIcons name="delete" size={20} color="white" />
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -272,6 +323,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    overflow: 'hidden',
   },
   itemInfo: {
     flex: 1,
