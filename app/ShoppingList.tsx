@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
   },
   item: {
     backgroundColor: '#242424',
-    padding: 12,
+    padding: 6,
     marginVertical: 5,
     borderRadius: 8,
     flexDirection: 'row',
@@ -631,7 +631,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   recordButton: {
-    backgroundColor: '#1976D2',
+    backgroundColor: '#C62828',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
