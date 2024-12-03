@@ -340,8 +340,6 @@ const ShoppingList: React.FC = () => {
   };
 
   const renderItem = ({ item }: { item: Item }) => {
-    if (!item.visible) return null;
-
     const isEditing = item.id === editingId;
     const borderColor = rainbowAnim.interpolate({
       inputRange: [0, 0.2, 0.4, 0.6, 0.8, 1],
