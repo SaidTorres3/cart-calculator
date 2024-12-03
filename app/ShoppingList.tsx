@@ -12,7 +12,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
-import { OPENAI_API_KEY } from '../config';
+import { API_KEY, OPENAI_API_KEY, GROQ_WHISPER_API_URL, OPENAI_CHAT_API_URL } from '../config';
 
 interface Item {
   id: string;
@@ -22,7 +22,7 @@ interface Item {
   visible: boolean;
 }
 
-export default function ShoppingList() {
+const ShoppingList: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [product, setProduct] = useState('');
   const [price, setPrice] = useState('');
@@ -76,25 +76,24 @@ export default function ShoppingList() {
           type: 'audio/wav',
           uri,
         } as any);
-        formData.append('model', 'whisper-1');
+        formData.append('model', 'whisper-large-v3-turbo');
+        formData.append('response_format', 'verbose_json');
 
-        // Transcribe with Whisper using fetch
-        const transcriptionResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        // Transcribe with Whisper using Groq's API
+        const transcriptionResponse = await fetch(GROQ_WHISPER_API_URL, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${OPENAI_API_KEY}`,
+            'Authorization': `Bearer ${API_KEY}`,
           },
           body: formData,
         });
 
         const transcriptionData = await transcriptionResponse.json();
-        
-        if (!transcriptionResponse.ok) {
-          throw new Error('Transcription failed');
-        }
+        const transcribedText = transcriptionData.text;
 
-        // Process with GPT-4 using fetch
-        const completionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        console.log('Transcribed text:', transcribedText);
+
+        const chatResponse = await fetch(OPENAI_CHAT_API_URL, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${OPENAI_API_KEY}`,
@@ -105,46 +104,53 @@ export default function ShoppingList() {
             messages: [
               {
                 role: "system",
-                content: `Convert the shopping item description into JSON format with the following structure:
-                {
-                  "product": string,
-                  "quantity": string (number),
-                  "price": string (number)
-                }
-                Example: "add three bananas that cost seven dollars each" should become:
-                {
-                  "product": "bananas",
-                  "quantity": "3",
-                  "price": "7"
-                }`
+                content: `Extract shopping items from the text. Return a single JSON object with properties: product (string), quantity (float), and price (float). 
+                          If quantity or price is not mentioned, use 0. For cases where the quantity is given in grams and the price per kilogram is provided, 
+                          convert the quantity to kilograms and include it as a decimal number (e.g., '300 gramos de plátano que valen a 30 pesos el kilo' should return 
+                          {\"product\":\"plátano\",\"quantity\":0.3,\"price\":30}). Ensure that both quantity and price are always floats.`
               },
               {
                 role: "user",
-                content: transcriptionData.text
+                content: transcribedText
               }
-            ]
-          })
+            ],
+            temperature: 0.3,
+            max_tokens: 1000
+          }),         
         });
 
-        const completionData = await completionResponse.json();
+        const completionData = await chatResponse.json();
         
-        if (!completionResponse.ok) {
-          throw new Error('GPT processing failed');
+        if (!chatResponse.ok) {
+          console.error('Chat API Error:', completionData);
+          throw new Error('Chat processing failed');
         }
 
-        // Parse the JSON response
-        const result = JSON.parse(completionData.choices[0].message.content);
-        
-        // Add the item
-        const newItem: Item = {
-          id: Date.now().toString(),
-          product: result.product,
-          quantity: result.quantity,
-          price: result.price,
-          visible: true,
-        };
+        console.log('Chat response:', completionData.choices[0].message.content);
 
-        setItems([...items, newItem]);
+        try {
+          // Parse the JSON response
+          const result = JSON.parse(completionData.choices[0].message.content);
+          
+          if (!result || typeof result !== 'object') {
+            throw new Error('Invalid response format');
+          }
+
+          // Add the item
+          const newItem: Item = {
+            id: Date.now().toString(),
+            product: result.product || '',
+            quantity: result.quantity || '',
+            price: result.price || '',
+            visible: true,
+          };
+
+          console.log('Adding new item:', newItem);
+          setItems(prevItems => [...prevItems, newItem]);
+        } catch (parseError) {
+          console.error('Parse error:', parseError, 'Response:', completionData.choices[0].message.content);
+          Alert.alert('Error', 'Failed to parse the response');
+        }
       }
     } catch (error) {
       console.error('Error:', error);
@@ -304,7 +310,7 @@ export default function ShoppingList() {
               </Text>
               <View style={styles.quantityPriceContainer}>
                 <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
-                  {item.quantity}x
+                  {item.quantity}
                 </Text>
                 <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>•</Text>
                 <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
@@ -423,7 +429,7 @@ export default function ShoppingList() {
       </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -556,3 +562,5 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 });
+
+export default ShoppingList;
