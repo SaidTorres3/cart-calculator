@@ -104,10 +104,19 @@ const ShoppingList: React.FC = () => {
             messages: [
               {
                 role: "system",
-                content: `Extract shopping items from the text. Return a single JSON object with properties: product (string), quantity (float), and price (float). 
-                          If quantity or price is not mentioned, use 0. For cases where the quantity is given in grams and the price per kilogram is provided, 
-                          convert the quantity to kilograms and include it as a decimal number (e.g., '300 gramos de plátano que valen a 30 pesos el kilo' should return 
-                          {\"product\":\"plátano\",\"quantity\":0.3,\"price\":30}). Ensure that both quantity and price are always floats.`
+                content: `Extract shopping items from Spanish text. Return a JSON array of objects, where each object has properties: product (string), quantity (float), and price (float).
+                          For Spanish expressions:
+                          - When a number follows "de" (e.g., "rollo de 100"), interpret it as the price
+                          - Default quantity to 1.0 if not specified
+                          - Handle both price and quantity if both are specified (e.g., "2 kilos de tomate a 50 pesos")
+                          - For weights, convert grams to kilograms (e.g., "500 gramos" = 0.5)
+                          Examples:
+                          "un rollo de 100" → {"product":"rollo","quantity":1.0,"price":100.0}
+                          "2 kilos de tomate a 50" → {"product":"tomate","quantity":2.0,"price":50.0}
+                          "500 gramos de queso de 80" → {"product":"queso","quantity":0.5,"price":80.0}
+                          "galletas oreo 34 pesos" → {"product":"galletas oreo","quantity":1.0,"price":34.0}
+                          "3 bolsas de leche 10 pesos" → {"product":"leche","quantity":3.0,"price":10.0}
+                        `
               },
               {
                 role: "user",
@@ -129,24 +138,30 @@ const ShoppingList: React.FC = () => {
         console.log('Chat response:', completionData.choices[0].message.content);
 
         try {
+          // Clean up the response by removing markdown formatting
+          const cleanResponse = completionData.choices[0].message.content
+            .replace(/```json\n?/g, '')  // Remove ```json
+            .replace(/```\n?/g, '')      // Remove closing ```
+            .trim();                     // Remove any extra whitespace
+
           // Parse the JSON response
-          const result = JSON.parse(completionData.choices[0].message.content);
+          const results = JSON.parse(cleanResponse);
           
-          if (!result || typeof result !== 'object') {
-            throw new Error('Invalid response format');
+          if (!Array.isArray(results)) {
+            throw new Error('Invalid response format - expected an array');
           }
 
-          // Add the item
-          const newItem: Item = {
-            id: Date.now().toString(),
+          // Add all items
+          const newItems: Item[] = results.map(result => ({
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
             product: result.product || '',
-            quantity: result.quantity || '',
-            price: result.price || '',
+            quantity: result.quantity?.toString() || '',
+            price: result.price?.toString() || '',
             visible: true,
-          };
+          }));
 
-          console.log('Adding new item:', newItem);
-          setItems(prevItems => [...prevItems, newItem]);
+          console.log('Adding new items:', newItems);
+          setItems(prevItems => [...prevItems, ...newItems]);
         } catch (parseError) {
           console.error('Parse error:', parseError, 'Response:', completionData.choices[0].message.content);
           Alert.alert('Error', 'Failed to parse the response');
