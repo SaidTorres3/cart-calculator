@@ -424,7 +424,7 @@ const ShoppingList: React.FC = () => {
         style={styles.header}
         onPress={() => setIsFormVisible(!isFormVisible)}
       >
-        <Text style={styles.title}>Lista de Compras</Text>
+        <Text style={styles.title}>Cart Calculator</Text>
         <View style={styles.collapseButton}>
           <MaterialIcons
             name={isFormVisible ? "expand-less" : "expand-more"}
@@ -439,7 +439,7 @@ const ShoppingList: React.FC = () => {
           <TextInput
             ref={productRef}
             style={styles.input}
-            placeholder="Product"
+            placeholder="Producto"
             placeholderTextColor="#666"
             value={product}
             onChangeText={setProduct}
@@ -447,36 +447,39 @@ const ShoppingList: React.FC = () => {
             onSubmitEditing={() => priceRef.current?.focus()}
             blurOnSubmit={false}
           />
-          <TextInput
-            ref={priceRef}
-            style={styles.input}
-            placeholder="Price"
-            placeholderTextColor="#666"
-            value={price}
-            onChangeText={setPrice}
-            keyboardType="numeric"
-            returnKeyType="next"
-            onSubmitEditing={() => quantityRef.current?.focus()}
-            blurOnSubmit={false}
-          />
-          <TextInput
-            ref={quantityRef}
-            style={styles.input}
-            placeholder="Quantity (default: 1)"
-            placeholderTextColor="#666"
-            value={quantity}
-            onChangeText={setQuantity}
-            keyboardType="numeric"
-            returnKeyType="done"
-            onSubmitEditing={() => {
-              if (editingId) {
-                updateItem();
-              } else {
-                addItem();
-              }
-              productRef.current?.focus();
-            }}
-          />
+          <View style={styles.priceQuantityContainer}>
+            <TextInput
+              ref={priceRef}
+              style={[styles.input, styles.priceInput]}
+              placeholder="Precio"
+              placeholderTextColor="#666"
+              value={price}
+              onChangeText={setPrice}
+              keyboardType="numeric"
+              returnKeyType="next"
+              onSubmitEditing={() => quantityRef.current?.focus()}
+              blurOnSubmit={false}
+            />
+            <Text style={styles.xSymbol}>x</Text>
+            <TextInput
+              ref={quantityRef}
+              style={[styles.input, styles.quantityInput]}
+              placeholder="Cantidad"
+              placeholderTextColor="#666"
+              value={quantity}
+              onChangeText={setQuantity}
+              keyboardType="numeric"
+              returnKeyType="done"
+              onSubmitEditing={() => {
+                if (editingId) {
+                  updateItem();
+                } else {
+                  addItem();
+                }
+                productRef.current?.focus();
+              }}
+            />
+          </View>
           {editingId ? (
             <View style={styles.editButtonsContainer}>
               <TouchableOpacity style={[styles.addButton, styles.updateButton]} onPress={updateItem}>
@@ -495,6 +498,7 @@ const ShoppingList: React.FC = () => {
             <MaterialIcons name={isRecording ? "stop" : "mic"} size={24} color="white" />
           </TouchableOpacity>
         </View>
+
       )}
 
       <FlatList
@@ -657,6 +661,23 @@ const styles = StyleSheet.create({
   list: {
     marginBottom: 20,
   },
+  priceQuantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8, // Adjust spacing as needed
+  },
+  priceInput: {
+    flex: 1, // Adjust width as needed
+  },
+  quantityInput: {
+    flex: 1, // Adjust width as needed
+  },
+  xSymbol: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginHorizontal: 8,
+  },  
 });
 
 export default ShoppingList;
