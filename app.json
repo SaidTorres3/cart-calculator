@@ -29,11 +29,18 @@
         {
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#1a1a1a"
         }
       ]
     ],
+    "extra": {
+      "GROQ_API_KEY": {
+        "required": true
+      },
+      "OPENAI_API_KEY": {
+        "required": true
+      }
+    },
     "experiments": {
       "typedRoutes": true
     }

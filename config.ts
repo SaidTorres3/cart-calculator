@@ -1,12 +1,14 @@
-import { GROQ_API_KEY } from '@env';
-import { OPENAI_API_KEY as ENV_OPENAI_API_KEY } from '@env';
+import Constants from 'expo-constants';
+
+const GROQ_API_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY;
+const ENV_OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
 
 if (!GROQ_API_KEY) {
-  throw new Error('GROQ_API_KEY is not defined in .env file');
+  throw new Error('EXPO_PUBLIC_GROQ_API_KEY is not defined in .env file');
 }
 
 if (!ENV_OPENAI_API_KEY) {
-  throw new Error('OPENAI_API_KEY is not defined in .env file');
+  throw new Error('EXPO_PUBLIC_OPENAI_API_KEY is not defined in .env file');
 }
 
 // Export all constants

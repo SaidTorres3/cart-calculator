@@ -1,4 +1,10 @@
-declare module '@env' {
-  export const GROQ_API_KEY: string;
-  export const OPENAI_API_KEY: string;
+/// <reference types="expo-env" />
+
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      EXPO_PUBLIC_GROQ_API_KEY: string;
+      EXPO_PUBLIC_OPENAI_API_KEY: string;
+    }
+  }
 }
