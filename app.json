@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "shoplist",
-    "slug": "shoplist",
+    "name": "cart-calculator",
+    "slug": "cart-calculator",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
