@@ -30,6 +30,7 @@ const ShoppingList: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isFormVisible, setIsFormVisible] = useState(true);
   const rainbowAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -369,68 +370,82 @@ const ShoppingList: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Shopping List</Text>
-      
-      <View style={styles.inputContainer}>
-        <TextInput
-          ref={productRef}
-          style={styles.input}
-          placeholder="Product"
-          placeholderTextColor="#666"
-          value={product}
-          onChangeText={setProduct}
-          returnKeyType="next"
-          onSubmitEditing={() => priceRef.current?.focus()}
-          blurOnSubmit={false}
-        />
-        <TextInput
-          ref={priceRef}
-          style={styles.input}
-          placeholder="Price"
-          placeholderTextColor="#666"
-          value={price}
-          onChangeText={setPrice}
-          keyboardType="numeric"
-          returnKeyType="next"
-          onSubmitEditing={() => quantityRef.current?.focus()}
-          blurOnSubmit={false}
-        />
-        <TextInput
-          ref={quantityRef}
-          style={styles.input}
-          placeholder="Quantity (default: 1)"
-          placeholderTextColor="#666"
-          value={quantity}
-          onChangeText={setQuantity}
-          keyboardType="numeric"
-          returnKeyType="done"
-          onSubmitEditing={() => {
-            if (editingId) {
-              updateItem();
-            } else {
-              addItem();
-            }
-            productRef.current?.focus();
-          }}
-        />
-        {editingId ? (
-          <View style={styles.editButtonsContainer}>
-            <TouchableOpacity style={[styles.addButton, styles.updateButton]} onPress={updateItem}>
-              <MaterialIcons name="check" size={24} color="white" />
+      <TouchableOpacity
+        style={styles.header}
+        onPress={() => setIsFormVisible(!isFormVisible)}
+      >
+        <Text style={styles.title}>Lista de Compras</Text>
+        <View style={styles.collapseButton}>
+          <MaterialIcons 
+            name={isFormVisible ? "expand-less" : "expand-more"} 
+            size={28} 
+            color="#1976D2"
+          />
+        </View>
+      </TouchableOpacity>
+
+      {isFormVisible && (
+        <View style={styles.inputContainer}>
+          <TextInput
+            ref={productRef}
+            style={styles.input}
+            placeholder="Product"
+            placeholderTextColor="#666"
+            value={product}
+            onChangeText={setProduct}
+            returnKeyType="next"
+            onSubmitEditing={() => priceRef.current?.focus()}
+            blurOnSubmit={false}
+          />
+          <TextInput
+            ref={priceRef}
+            style={styles.input}
+            placeholder="Price"
+            placeholderTextColor="#666"
+            value={price}
+            onChangeText={setPrice}
+            keyboardType="numeric"
+            returnKeyType="next"
+            onSubmitEditing={() => quantityRef.current?.focus()}
+            blurOnSubmit={false}
+          />
+          <TextInput
+            ref={quantityRef}
+            style={styles.input}
+            placeholder="Quantity (default: 1)"
+            placeholderTextColor="#666"
+            value={quantity}
+            onChangeText={setQuantity}
+            keyboardType="numeric"
+            returnKeyType="done"
+            onSubmitEditing={() => {
+              if (editingId) {
+                updateItem();
+              } else {
+                addItem();
+              }
+              productRef.current?.focus();
+            }}
+          />
+          {editingId ? (
+            <View style={styles.editButtonsContainer}>
+              <TouchableOpacity style={[styles.addButton, styles.updateButton]} onPress={updateItem}>
+                <MaterialIcons name="check" size={24} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.addButton, styles.cancelButton]} onPress={cancelEditing}>
+                <MaterialIcons name="close" size={24} color="white" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.addButton} onPress={addItem}>
+              <MaterialIcons name="add" size={24} color="white" />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.addButton, styles.cancelButton]} onPress={cancelEditing}>
-              <MaterialIcons name="close" size={24} color="white" />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.addButton} onPress={addItem}>
-            <MaterialIcons name="add" size={24} color="white" />
+          )}
+          <TouchableOpacity style={styles.recordButton} onPress={isRecording ? stopRecording : startRecording}>
+            <MaterialIcons name={isRecording ? "stop" : "mic"} size={24} color="white" />
           </TouchableOpacity>
-        )}
-        <TouchableOpacity style={styles.recordButton} onPress={isRecording ? stopRecording : startRecording}>
-          <MaterialIcons name={isRecording ? "stop" : "mic"} size={24} color="white" />
-        </TouchableOpacity>
-      </View>
+        </View>
+      )}
 
       <FlatList
         data={items}
@@ -452,12 +467,23 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#1a1a1a',
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    position: 'relative',
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
     color: '#fff',
     textAlign: 'center',
+  },
+  collapseButton: {
+    position: 'absolute',
+    right: 0,
+    padding: 8,
   },
   inputContainer: {
     gap: 10,
