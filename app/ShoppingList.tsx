@@ -8,6 +8,9 @@ import {
   StyleSheet,
   Alert,
   Animated,
+  LayoutAnimation,
+  Platform,
+  UIManager,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
@@ -20,6 +23,7 @@ interface Item {
   quantity: string;
   price: string;
   visible: boolean;
+  fadeAnim?: Animated.Value;
 }
 
 const ShoppingList: React.FC = () => {
@@ -32,6 +36,15 @@ const ShoppingList: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [isFormVisible, setIsFormVisible] = useState(true);
   const rainbowAnim = useRef(new Animated.Value(0)).current;
+  const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      if (UIManager.setLayoutAnimationEnabledExperimental) {
+        UIManager.setLayoutAnimationEnabledExperimental(true);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -42,6 +55,21 @@ const ShoppingList: React.FC = () => {
       });
     })();
   }, []);
+
+  useEffect(() => {
+    if (items.length > 0) {
+      const lastItem = items[0]; // Get the most recently added item
+      if (lastItem.fadeAnim) {
+        Animated.sequence([
+          Animated.timing(lastItem.fadeAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          })
+        ]).start();
+      }
+    }
+  }, [items]);
 
   const startRecording = async () => {
     try {
@@ -126,11 +154,11 @@ const ShoppingList: React.FC = () => {
             ],
             temperature: 0.3,
             max_tokens: 1000
-          }),         
+          }),
         });
 
         const completionData = await chatResponse.json();
-        
+
         if (!chatResponse.ok) {
           console.error('Chat API Error:', completionData);
           throw new Error('Chat processing failed');
@@ -147,7 +175,7 @@ const ShoppingList: React.FC = () => {
 
           // Parse the JSON response
           const results = JSON.parse(cleanResponse);
-          
+
           if (!Array.isArray(results)) {
             throw new Error('Invalid response format - expected an array');
           }
@@ -159,10 +187,20 @@ const ShoppingList: React.FC = () => {
             quantity: result.quantity?.toString() || '',
             price: result.price?.toString() || '',
             visible: true,
+            fadeAnim: new Animated.Value(0),  // Initialize fadeAnim for voice items
           }));
 
           console.log('Adding new items:', newItems);
-          setItems(prevItems => [...prevItems, ...newItems]);
+          setItems(prevItems => [...newItems, ...prevItems]);
+
+          // Start fade in animation for each new item
+          newItems.forEach(item => {
+            Animated.timing(item.fadeAnim!, {
+              toValue: 1,
+              duration: 500,
+              useNativeDriver: true,
+            }).start();
+          });
         } catch (parseError) {
           console.error('Parse error:', parseError, 'Response:', completionData.choices[0].message.content);
           Alert.alert('Error', 'Failed to parse the response');
@@ -204,23 +242,34 @@ const ShoppingList: React.FC = () => {
   }, [editingId]);
 
   const addItem = () => {
-    if (!product || !price) {
-      Alert.alert('Error', 'Please fill product and price');
-      return;
-    }
+    if (product.trim() === '') return;
 
-    const newItem: Item = {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+    const newItem = {
       id: Date.now().toString(),
-      product,
+      product: product.trim(),
       quantity: quantity || '1',
-      price,
+      price: price || '0',
       visible: true,
+      fadeAnim: new Animated.Value(0),
     };
 
-    setItems([...items, newItem]);
+    setItems(prevItems => [newItem, ...prevItems]);
     setProduct('');
     setPrice('');
     setQuantity('1');
+
+    // Start fade in animation
+    Animated.timing(newItem.fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+
+    setTimeout(() => {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+    }, 100);
   };
 
   const startEditing = (item: Item) => {
@@ -236,12 +285,12 @@ const ShoppingList: React.FC = () => {
       return;
     }
 
-    setItems(items.map(item => 
-      item.id === editingId 
+    setItems(items.map(item =>
+      item.id === editingId
         ? { ...item, product, price, quantity: quantity || '1' }
         : item
     ));
-    
+
     setEditingId(null);
     setProduct('');
     setPrice('');
@@ -276,8 +325,8 @@ const ShoppingList: React.FC = () => {
   };
 
   const toggleVisibility = (id: string) => {
-    setItems(items.map(item => 
-      item.id === id 
+    setItems(items.map(item =>
+      item.id === id
         ? { ...item, visible: !item.visible }
         : item
     ));
@@ -291,6 +340,8 @@ const ShoppingList: React.FC = () => {
   };
 
   const renderItem = ({ item }: { item: Item }) => {
+    if (!item.visible) return null;
+
     const isEditing = item.id === editingId;
     const borderColor = rainbowAnim.interpolate({
       inputRange: [0, 0.2, 0.4, 0.6, 0.8, 1],
@@ -302,7 +353,7 @@ const ShoppingList: React.FC = () => {
         '#0000ff',
         '#4b0082'
       ]
-    });
+    }).toString();
 
     return (
       <TouchableOpacity
@@ -316,7 +367,8 @@ const ShoppingList: React.FC = () => {
             isEditing && {
               borderWidth: 2,
               borderColor: borderColor,
-            }
+            },
+            { opacity: item.fadeAnim }  // Add opacity animation
           ]}
         >
           <View style={styles.itemInfo}>
@@ -328,11 +380,11 @@ const ShoppingList: React.FC = () => {
                 <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
                   {item.quantity}
                 </Text>
-                <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>•</Text>
+                <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>&bull;</Text>
                 <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>
                   ${item.price}
                 </Text>
-                <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>•</Text>
+                <Text style={[styles.itemText, !item.visible && styles.hiddenText]}>&bull;</Text>
                 <Text style={[styles.subtotalText, !item.visible && styles.hiddenText]}>
                   ${(parseFloat(item.price) * parseFloat(item.quantity)).toFixed(2)}
                 </Text>
@@ -347,10 +399,10 @@ const ShoppingList: React.FC = () => {
                 toggleVisibility(item.id);
               }}
             >
-              <MaterialIcons 
-                name={item.visible ? "visibility" : "visibility-off"} 
-                size={20} 
-                color="white" 
+              <MaterialIcons
+                name={item.visible ? "visibility" : "visibility-off"}
+                size={20}
+                color="white"
               />
             </TouchableOpacity>
             <TouchableOpacity
@@ -376,9 +428,9 @@ const ShoppingList: React.FC = () => {
       >
         <Text style={styles.title}>Lista de Compras</Text>
         <View style={styles.collapseButton}>
-          <MaterialIcons 
-            name={isFormVisible ? "expand-less" : "expand-more"} 
-            size={28} 
+          <MaterialIcons
+            name={isFormVisible ? "expand-less" : "expand-more"}
+            size={28}
             color="#1976D2"
           />
         </View>
@@ -448,10 +500,15 @@ const ShoppingList: React.FC = () => {
       )}
 
       <FlatList
+        ref={flatListRef}
         data={items}
         renderItem={renderItem}
         keyExtractor={item => item.id}
         style={styles.list}
+        initialNumToRender={20}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        onScrollToIndexFailed={() => {}}
       />
 
       <View style={styles.totalContainer}>
