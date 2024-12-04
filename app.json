@@ -15,7 +15,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.saidtorres3.cartcalculator"
     },
     "web": {
       "bundler": "metro",
@@ -39,6 +40,12 @@
       },
       "OPENAI_API_KEY": {
         "required": true
+      },
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "a5d547bf-78c2-4972-bbab-f670ceddf536"
       }
     },
     "experiments": {
