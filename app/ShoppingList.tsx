@@ -15,6 +15,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_KEY, OPENAI_API_KEY, GROQ_WHISPER_API_URL, OPENAI_CHAT_API_URL } from '../config';
 
 interface Item {
@@ -25,6 +26,8 @@ interface Item {
   visible: boolean;
   fadeAnim?: Animated.Value;
 }
+
+const STORAGE_KEY = 'SHOPPING_ITEMS';
 
 const ShoppingList: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
@@ -39,6 +42,7 @@ const ShoppingList: React.FC = () => {
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
+    // Enable LayoutAnimation on Android
     if (Platform.OS === 'android') {
       if (UIManager.setLayoutAnimationEnabledExperimental) {
         UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -53,6 +57,18 @@ const ShoppingList: React.FC = () => {
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       });
+
+      // Load items from AsyncStorage on mount
+      const savedItems = await AsyncStorage.getItem(STORAGE_KEY);
+      if (savedItems) {
+        const parsedItems: Item[] = JSON.parse(savedItems);
+        // Re-initialize fadeAnim for each item
+        const restoredItems = parsedItems.map(i => ({
+          ...i,
+          fadeAnim: new Animated.Value(1)
+        }));
+        setItems(restoredItems);
+      }
     })();
   }, []);
 
@@ -69,6 +85,11 @@ const ShoppingList: React.FC = () => {
         ]).start();
       }
     }
+  }, [items]);
+
+  useEffect(() => {
+    // Save items to AsyncStorage whenever `items` changes
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
   const startRecording = async () => {
@@ -171,33 +192,29 @@ const ShoppingList: React.FC = () => {
         console.log('Chat response:', completionData.choices[0].message.content);
 
         try {
-          // Clean up the response by removing markdown formatting
           const cleanResponse = completionData.choices[0].message.content
-            .replace(/```json\n?/g, '')  // Remove ```json
-            .replace(/```\n?/g, '')      // Remove closing ```
-            .trim();                     // Remove any extra whitespace
+            .replace(/```json\n?/g, '')
+            .replace(/```\n?/g, '')
+            .trim();
 
-          // Parse the JSON response
           const results = JSON.parse(cleanResponse);
 
           if (!Array.isArray(results)) {
             throw new Error('Invalid response format - expected an array');
           }
 
-          // Add all items
           const newItems: Item[] = results.map(result => ({
             id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
             product: result.product || '',
             quantity: result.quantity?.toString() || '',
             price: result.price?.toString() || '',
             visible: true,
-            fadeAnim: new Animated.Value(0),  // Initialize fadeAnim for voice items
+            fadeAnim: new Animated.Value(0),
           }));
 
           console.log('Adding new items:', newItems);
           setItems(prevItems => [...newItems, ...prevItems]);
 
-          // Start fade in animation for each new item
           newItems.forEach(item => {
             Animated.timing(item.fadeAnim!, {
               toValue: 1,
@@ -264,7 +281,6 @@ const ShoppingList: React.FC = () => {
     setPrice('');
     setQuantity('1');
 
-    // Start fade in animation
     Animated.timing(newItem.fadeAnim, {
       toValue: 1,
       duration: 500,
@@ -370,7 +386,7 @@ const ShoppingList: React.FC = () => {
               borderWidth: 2,
               borderColor: borderColor,
             },
-            { opacity: item.fadeAnim }  // Add opacity animation
+            { opacity: item.fadeAnim }
           ]}
         >
           <View style={styles.itemInfo}>
@@ -502,7 +518,6 @@ const ShoppingList: React.FC = () => {
             <MaterialIcons name={isRecording ? "stop" : "mic"} size={24} color="white" />
           </TouchableOpacity>
         </View>
-
       )}
 
       <FlatList
@@ -668,20 +683,20 @@ const styles = StyleSheet.create({
   priceQuantityContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8, // Adjust spacing as needed
+    gap: 8,
   },
   priceInput: {
-    flex: 1, // Adjust width as needed
+    flex: 1,
   },
   quantityInput: {
-    flex: 1, // Adjust width as needed
+    flex: 1,
   },
   xSymbol: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
     marginHorizontal: 8,
-  },  
+  },
 });
 
 export default ShoppingList;
