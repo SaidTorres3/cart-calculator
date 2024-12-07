@@ -137,14 +137,18 @@ const ShoppingList: React.FC = () => {
                           For Spanish expressions:
                           - When a number follows "de" (e.g., "rollo de 100"), interpret it as the price
                           - Default quantity to 1.0 if not specified
+                          - Default price to 0.0 if not specified
                           - Handle both price and quantity if both are specified (e.g., "2 kilos de tomate a 50 pesos")
                           - For weights, convert grams to kilograms (e.g., "500 gramos" = 0.5)
                           Examples:
-                          "un rollo de 100" → {"product":"rollo","quantity":1.0,"price":100.0}
-                          "2 kilos de tomate a 50" → {"product":"tomate","quantity":2.0,"price":50.0}
-                          "500 gramos de queso de 80" → {"product":"queso","quantity":0.5,"price":80.0}
-                          "galletas oreo 34 pesos" → {"product":"galletas oreo","quantity":1.0,"price":34.0}
-                          "3 bolsas de leche 10 pesos" → {"product":"leche","quantity":3.0,"price":10.0}
+                          "un rollo de 100" → [{"product":"rollo","quantity":1.0,"price":100.0}]
+                          "2 kilos de tomate a 50" → [{"product":"tomate","quantity":2.0,"price":50.0}]
+                          "500 gramos de queso de 80" → [{"product":"queso","quantity":0.5,"price":80.0}]
+                          "galletas oreo 34 pesos" → [{"product":"galletas oreo","quantity":1.0,"price":34.0}]
+                          "3 bolsas de leche 10 pesos" → [{"product":"leche","quantity":3.0,"price":10.0}]
+                          "dos desodorantes de 45 pesos y un desodorante de 25 pesos" → [{"product":"desodorante","quantity":2.0,"price":45.0},{"product":"desodorante","quantity":1.0,"price":25.0}]
+
+                          DO NOT RETURN ANYTHING OTHER THAN A JSON ARRAY
                         `
               },
               {
