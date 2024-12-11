@@ -162,41 +162,41 @@ const ShoppingList: React.FC = () => {
         console.log('Transcribed text:', transcribedText);
 
         const chatResponse = await fetch(OPENAI_CHAT_API_URL, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${OPENAI_API_KEY}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             model: "gpt-4o-mini",
             messages: [
               {
                 role: "system",
-                content: `Extract shopping items from Spanish text. Return a JSON array of objects, where each object has properties: product (string), quantity (float), and price (float).
-                          For Spanish expressions:
-                          - When a number follows "de" (e.g., "rollo de 100"), interpret it as the price
-                          - Default quantity to 1.0 if not specified
-                          - Default price to 0.0 if not specified
-                          - Handle both price and quantity if both are specified (e.g., "2 kilos de tomate a 50 pesos")
-                          - For weights, convert grams to kilograms (e.g., "500 gramos" = 0.5)
-                          Examples:
-                          "un rollo de 100" → [{"product":"rollo","quantity":1.0,"price":100.0}]
-                          "2 kilos de tomate a 50" → [{"product":"tomate","quantity":2.0,"price":50.0}]
-                          "500 gramos de queso de 80" → [{"product":"queso","quantity":0.5,"price":80.0}]
-                          "galletas oreo 34 pesos" → [{"product":"galletas oreo","quantity":1.0,"price":34.0}]
-                          "3 bolsas de leche 10 pesos" → [{"product":"leche","quantity":3.0,"price":10.0}]
-                          "dos desodorantes de 45 pesos y un desodorante de 25 pesos" → [{"product":"desodorante","quantity":2.0,"price":45.0},{"product":"desodorante","quantity":1.0,"price":25.0}]
+                content: `Extract shopping items from text and return a JSON array of objects with properties: product (string), quantity (float), and price (float).
 
-                          DO NOT RETURN ANYTHING OTHER THAN A JSON ARRAY
-                        `
+                          Rules:
+                          Product after a number (e.g., "rollo de 100") → interpret as price.
+                          Default: quantity = 1.0, price = 0.0.
+                          Convert grams to kilograms (e.g., "500 gramos" = 0.5).
+
+                          Examples:
+                          "una servilleta" → [{"product":"Servilleta","quantity":1.0,"price":0.0}]
+                          "un rollo de 100" → [{"product":"Rollo","quantity":1.0,"price":100.0}]
+                          "2 desodorantes de 45 pesos y uno de 25 pesos" → [{"product":"Desodorante","quantity":2.0,"price":45.0},{"product":"Desodorante","quantity":1.0,"price":25.0}]
+                          "3 bolsas de leche 15 pesos" → [{"product":"Leche","quantity":3.0,"price":45.0}]
+                          "323 gramos de tomate a 80 el kilo" → [{"product":"Tomate","quantity":0.323,"price":80.0}]
+
+                          Output:
+                          Return only a JSON array or an empty array ([]) for random text.
+                        `,
               },
               {
                 role: "user",
-                content: transcribedText
-              }
+                content: transcribedText,
+              },
             ],
             temperature: 0.3,
-            max_tokens: 1000
+            max_tokens: 1000,
           }),
         });
 
@@ -492,7 +492,7 @@ const ShoppingList: React.FC = () => {
               placeholder="Precio"
               placeholderTextColor="#666"
               value={price}
-              onChangeText={setPrice}
+              onChangeText={text => setPrice(text.replace(/[^0-9]/g, ''))}
               keyboardType="numeric"
               returnKeyType="next"
               onSubmitEditing={() => quantityRef.current?.focus()}
@@ -505,7 +505,7 @@ const ShoppingList: React.FC = () => {
               placeholder="Cantidad"
               placeholderTextColor="#666"
               value={quantity}
-              onChangeText={setQuantity}
+              onChangeText={text => setQuantity(text.replace(/[^0-9]/g, ''))}
               keyboardType="numeric"
               returnKeyType="done"
               onSubmitEditing={() => {
