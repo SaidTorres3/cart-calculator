@@ -1,7 +1,9 @@
-import { SafeAreaView, StyleSheet, Platform, StatusBar, View, Text } from "react-native";
+import { SafeAreaView, StyleSheet, Platform, StatusBar, View, Text, TouchableOpacity } from "react-native";
 import ShoppingList from "./ShoppingList";
+import Wishlist from "./Wishlist";
 import { useEffect, useState } from "react";
 import * as SplashScreen from 'expo-splash-screen';
+import { MaterialIcons } from '@expo/vector-icons';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -9,6 +11,7 @@ SplashScreen.preventAutoHideAsync();
 export default function Index() {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [activeScreen, setActiveScreen] = useState<'shoppingList' | 'wishlist'>('shoppingList');
 
   useEffect(() => {
     async function prepare() {
@@ -41,7 +44,15 @@ export default function Index() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ShoppingList />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => setActiveScreen('shoppingList')}>
+          <Text style={activeScreen === 'shoppingList' ? styles.activeHeaderText : styles.inactiveHeaderText}>Shopping List</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setActiveScreen('wishlist')}>
+          <Text style={activeScreen === 'wishlist' ? styles.activeHeaderText : styles.inactiveHeaderText}>Wishlist</Text>
+        </TouchableOpacity>
+      </View>
+      {activeScreen === 'shoppingList' ? <ShoppingList /> : <Wishlist />}
     </SafeAreaView>
   );
 }
@@ -56,5 +67,19 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
     margin: 20,
-  }
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 10,
+  },
+  activeHeaderText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  inactiveHeaderText: {
+    color: '#aaa',
+    fontSize: 18,
+  },
 });
