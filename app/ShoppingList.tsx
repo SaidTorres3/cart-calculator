@@ -50,6 +50,28 @@ const ShoppingList: React.FC = () => {
     }
   }, []);
 
+  // Load data from AsyncStorage on app start
+  useEffect(() => {
+    const loadSavedData = async () => {
+      try {
+        const savedData = await AsyncStorage.getItem(STORAGE_KEY);
+        if (savedData !== null) {
+          const parsedItems: Item[] = JSON.parse(savedData);
+          // Re-initialize fadeAnim for each item
+          const restoredItems = parsedItems.map(i => ({
+            ...i,
+            fadeAnim: new Animated.Value(1)
+          }));
+          setItems(restoredItems);
+        }
+      } catch (error) {
+        console.error('Failed to load data from AsyncStorage', error);
+      }
+    };
+
+    loadSavedData();
+  }, []);
+
   useEffect(() => {
     (async () => {
       await Audio.requestPermissionsAsync();
@@ -57,18 +79,6 @@ const ShoppingList: React.FC = () => {
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       });
-
-      // Load items from AsyncStorage on mount
-      const savedItems = await AsyncStorage.getItem(STORAGE_KEY);
-      if (savedItems) {
-        const parsedItems: Item[] = JSON.parse(savedItems);
-        // Re-initialize fadeAnim for each item
-        const restoredItems = parsedItems.map(i => ({
-          ...i,
-          fadeAnim: new Animated.Value(1)
-        }));
-        setItems(restoredItems);
-      }
     })();
   }, []);
 
@@ -87,9 +97,17 @@ const ShoppingList: React.FC = () => {
     }
   }, [items]);
 
+  // Save data to AsyncStorage whenever 'items' changes
   useEffect(() => {
-    // Save items to AsyncStorage whenever `items` changes
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    const saveData = async () => {
+      try {
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+      } catch (error) {
+        console.error('Failed to save data to AsyncStorage', error);
+      }
+    };
+
+    saveData();
   }, [items]);
 
   const startRecording = async () => {
