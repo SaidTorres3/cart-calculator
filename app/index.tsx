@@ -4,6 +4,8 @@ import Wishlist from "./Wishlist";
 import { useEffect, useState } from "react";
 import * as SplashScreen from 'expo-splash-screen';
 import { MaterialIcons } from '@expo/vector-icons';
+import LLMChat from "./LLMChat";
+import { LLM_CHAT_ENABLED } from "../config";
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -11,7 +13,7 @@ SplashScreen.preventAutoHideAsync();
 export default function Index() {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [activeScreen, setActiveScreen] = useState<'shoppingList' | 'wishlist'>('shoppingList');
+  const [activeScreen, setActiveScreen] = useState<'shoppingList' | 'wishlist' | 'llmChat'>('shoppingList');
 
   useEffect(() => {
     async function prepare() {
@@ -51,8 +53,13 @@ export default function Index() {
         <TouchableOpacity onPress={() => setActiveScreen('wishlist')}>
           <Text style={activeScreen === 'wishlist' ? styles.activeHeaderText : styles.inactiveHeaderText}>Wishlist</Text>
         </TouchableOpacity>
+        {LLM_CHAT_ENABLED && (
+          <TouchableOpacity onPress={() => setActiveScreen('llmChat')}>
+            <Text style={activeScreen === 'llmChat' ? styles.activeHeaderText : styles.inactiveHeaderText}>LLM Chat</Text>
+          </TouchableOpacity>
+        )}
       </View>
-      {activeScreen === 'shoppingList' ? <ShoppingList /> : <Wishlist />}
+      {activeScreen === 'shoppingList' ? <ShoppingList /> : activeScreen === 'wishlist' ? <Wishlist /> : LLM_CHAT_ENABLED ? <LLMChat /> : null}
     </SafeAreaView>
   );
 }
