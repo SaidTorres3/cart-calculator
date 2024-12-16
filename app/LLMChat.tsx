@@ -1,47 +1,62 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
-import { OPENAI_API_KEY, OPENAI_CHAT_API_URL } from '../config';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  StyleSheet,
+  ScrollView,
+} from "react-native";
+import { API_KEY } from "../config";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const LLMChat: React.FC = () => {
-  const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
-  const [inputText, setInputText] = useState('');
+  const [messages, setMessages] = useState<
+    { role: "user" | "assistant"; content: string }[]
+  >([]);
+  const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
 
   const sendMessage = async () => {
-    if (inputText.trim() === '') return;
+    if (inputText.trim() === "") return;
 
-    const newMessage: { role: 'user'; content: string } = { role: 'user', content: inputText };
-    setMessages(prevMessages => [...prevMessages, newMessage]);
-    setInputText('');
+    const newMessage: { role: "user"; content: string } = {
+      role: "user",
+      content: inputText,
+    };
+    setMessages((prevMessages) => [...prevMessages, newMessage]);
+    setInputText("");
     setLoading(true);
 
     try {
-      const response = await fetch(OPENAI_CHAT_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [...messages, newMessage],
-          temperature: 0.7,
-          max_tokens: 1000,
-        }),
+      const genAI = new GoogleGenerativeAI(API_KEY);
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash-exp",
+        systemInstruction: `You are a helpful assistant that always responds at the end with a smiling emoji.`,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Chat API Error:', errorData);
-        throw new Error('Chat processing failed');
-      }
+      const result = await model.generateContent({
+        contents: [
+          ...messages.map((m) => ({
+            role: m.role,
+            parts: [{ text: m.content }],
+          })),
+          { role: "user", parts: [{ text: inputText }] },
+        ],
+      });
 
-      const data = await response.json();
-      const assistantMessage: { role: 'assistant'; content: string } = { role: 'assistant', content: data.choices[0].message.content };
-      setMessages(prevMessages => [...prevMessages, assistantMessage]);
+      const completionData = result.response.text();
+      const assistantMessage: { role: "assistant"; content: string } = {
+        role: "assistant",
+        content: completionData,
+      };
+      setMessages((prevMessages) => [...prevMessages, assistantMessage]);
     } catch (error) {
-      console.error('Error sending message:', error);
-      setMessages(prevMessages => [...prevMessages, { role: 'assistant', content: 'Failed to get response.' }]);
+      console.error("Error sending message:", error);
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { role: "assistant", content: "Failed to get response." },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -51,7 +66,14 @@ const LLMChat: React.FC = () => {
     <View style={styles.container}>
       <ScrollView style={styles.messageContainer}>
         {messages.map((message, index) => (
-          <View key={index} style={message.role === 'user' ? styles.userMessage : styles.assistantMessage}>
+          <View
+            key={index}
+            style={
+              message.role === "user"
+                ? styles.userMessage
+                : styles.assistantMessage
+            }
+          >
             <Text style={styles.messageText}>{message.content}</Text>
           </View>
         ))}
@@ -76,45 +98,45 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 10,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: "#1a1a1a",
   },
   messageContainer: {
     flex: 1,
     marginBottom: 10,
   },
   userMessage: {
-    backgroundColor: '#242424',
+    backgroundColor: "#242424",
     padding: 10,
     borderRadius: 8,
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
     marginBottom: 5,
-    maxWidth: '80%',
+    maxWidth: "80%",
   },
   assistantMessage: {
-    backgroundColor: '#333',
+    backgroundColor: "#333",
     padding: 10,
     borderRadius: 8,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     marginBottom: 5,
-    maxWidth: '80%',
+    maxWidth: "80%",
   },
   messageText: {
-    color: '#fff',
+    color: "#fff",
   },
-    loadingText: {
-    color: '#fff',
-    alignSelf: 'center',
+  loadingText: {
+    color: "#fff",
+    alignSelf: "center",
     marginTop: 10,
   },
   inputArea: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
   },
   input: {
     flex: 1,
-    backgroundColor: '#333',
-    color: '#fff',
+    backgroundColor: "#333",
+    color: "#fff",
     padding: 10,
     borderRadius: 8,
     fontSize: 16,
