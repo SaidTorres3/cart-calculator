@@ -22,7 +22,6 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 interface Item {
   id: string;
   product: string;
-  quantity: string;
   visible: boolean;
   fadeAnim?: Animated.Value;
 }
@@ -32,7 +31,6 @@ const STORAGE_KEY = "WISHLIST_ITEMS";
 const Wishlist: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [product, setProduct] = useState("");
-  const [quantity, setQuantity] = useState("1");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -137,17 +135,15 @@ const Wishlist: React.FC = () => {
         const genAI = new GoogleGenerativeAI(API_KEY);
         const model = genAI.getGenerativeModel({
           model: "gemini-2.0-flash-exp",
-          systemInstruction: `Extract shopping items from text and return a JSON array of objects with properties: product (string), quantity (float).
+          systemInstruction: `Extract shopping items from text and return a JSON array of objects with properties: product (string).
   
                           Rules:
-                          Default: quantity = 1.0.
-                          Convert grams to kilograms (e.g., "500 gramos" = 0.5).
-  
+                          
                           Examples:
-                          "una servilleta" → [{"product":"Servilleta","quantity":1.0}]
-                          "2 desodorantes" → [{"product":"Desodorante","quantity":2.0}]
-                          "3 bolsas de leche" → [{"product":"Leche","quantity":3.0}]
-                          "323 gramos de tomate" → [{"product":"Tomate","quantity":0.323}]
+                          "una servilleta" → [{"product":"Servilleta"}]
+                          "2 desodorantes" → [{"product":"2 Desodorantes"}]
+                          "3 bolsas de leche" → [{"product":"3 Bolsas de Leche"}]
+                          "Tomates" → [{"product":"Tomates"}]
   
                           Output:
                           Return only a JSON array or an empty array ([]) for random text.
@@ -183,7 +179,6 @@ const Wishlist: React.FC = () => {
           const newItems: Item[] = results.map((result) => ({
             id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
             product: result.product || "",
-            quantity: result.quantity?.toString() || "",
             visible: true,
             fadeAnim: new Animated.Value(0),
           }));
@@ -215,7 +210,6 @@ const Wishlist: React.FC = () => {
   };
 
   const productRef = useRef<TextInput>(null);
-  const quantityRef = useRef<TextInput>(null);
 
   const startRainbowAnimation = () => {
     Animated.loop(
@@ -250,14 +244,12 @@ const Wishlist: React.FC = () => {
     const newItem = {
       id: Date.now().toString(),
       product: product.trim(),
-      quantity: quantity || "1",
       visible: true,
       fadeAnim: new Animated.Value(0),
     };
 
     setItems((prevItems) => [newItem, ...prevItems]);
     setProduct("");
-    setQuantity("1");
 
     Animated.timing(newItem.fadeAnim, {
       toValue: 1,
@@ -273,7 +265,6 @@ const Wishlist: React.FC = () => {
   const startEditing = (item: Item) => {
     setEditingId(item.id);
     setProduct(item.product);
-    setQuantity(item.quantity);
   };
 
   const updateItem = () => {
@@ -285,20 +276,18 @@ const Wishlist: React.FC = () => {
     setItems(
       items.map((item) =>
         item.id === editingId
-          ? { ...item, product, quantity: quantity || "1" }
+          ? { ...item, product }
           : item
       )
     );
 
     setEditingId(null);
     setProduct("");
-    setQuantity("1");
   };
 
   const cancelEditing = () => {
     setEditingId(null);
     setProduct("");
-    setQuantity("1");
   };
 
   const removeItem = (id: string) => {
@@ -362,13 +351,6 @@ const Wishlist: React.FC = () => {
               >
                 {item.product}
               </Text>
-              <View style={styles.quantityPriceContainer}>
-                <Text
-                  style={[styles.itemText, !item.visible && styles.hiddenText]}
-                >
-                  {item.quantity}
-                </Text>
-              </View>
             </View>
           </View>
           <View style={styles.buttonContainer}>
@@ -425,31 +407,17 @@ const Wishlist: React.FC = () => {
             placeholderTextColor="#666"
             value={product}
             onChangeText={setProduct}
-            returnKeyType="next"
-            onSubmitEditing={() => quantityRef.current?.focus()}
+            returnKeyType="done"
+            onSubmitEditing={() => {
+              if (editingId) {
+                updateItem();
+              } else {
+                addItem();
+              }
+              productRef.current?.focus();
+            }}
             blurOnSubmit={false}
           />
-          <View style={styles.priceQuantityContainer}>
-            <Text style={styles.xSymbol}>x</Text>
-            <TextInput
-              ref={quantityRef}
-              style={[styles.input, styles.quantityInput]}
-              placeholder="Cantidad"
-              placeholderTextColor="#666"
-              value={quantity}
-              onChangeText={(text) => setQuantity(text.replace(/[^0-9]/g, ""))}
-              keyboardType="numeric"
-              returnKeyType="done"
-              onSubmitEditing={() => {
-                if (editingId) {
-                  updateItem();
-                } else {
-                  addItem();
-                }
-                productRef.current?.focus();
-              }}
-            />
-          </View>
           {editingId ? (
             <View style={styles.editButtonsContainer}>
               <TouchableOpacity
@@ -554,11 +522,6 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
   },
-  quantityPriceContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
   itemText: {
     fontSize: 16,
     color: "#fff",
@@ -638,23 +601,6 @@ const styles = StyleSheet.create({
   },
   list: {
     marginBottom: 20,
-  },
-  priceQuantityContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  priceInput: {
-    flex: 1,
-  },
-  quantityInput: {
-    flex: 1,
-  },
-  xSymbol: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#fff",
-    marginHorizontal: 8,
   },
 });
 
