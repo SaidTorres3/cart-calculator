@@ -274,11 +274,7 @@ const Wishlist: React.FC = () => {
     }
 
     setItems(
-      items.map((item) =>
-        item.id === editingId
-          ? { ...item, product }
-          : item
-      )
+      items.map((item) => (item.id === editingId ? { ...item, product } : item))
     );
 
     setEditingId(null);
@@ -311,6 +307,32 @@ const Wishlist: React.FC = () => {
       items.map((item) =>
         item.id === id ? { ...item, visible: !item.visible } : item
       )
+    );
+  };
+
+  // New function to clear all items
+  const clearAllItems = () => {
+    if (items.length === 0) {
+      Alert.alert("No Items", "There are no items to clear.");
+      return;
+    }
+
+    Alert.alert(
+      "Clear All Items",
+      "Are you sure you want to remove all items from your wishlist?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Clear All",
+          style: "destructive",
+          onPress: () => {
+            setItems([]);
+          },
+        },
+      ]
     );
   };
 
@@ -389,12 +411,17 @@ const Wishlist: React.FC = () => {
         onPress={() => setIsFormVisible(!isFormVisible)}
       >
         <Text style={styles.title}>Wishlist</Text>
-        <View style={styles.collapseButton}>
-          <MaterialIcons
-            name={isFormVisible ? "expand-less" : "expand-more"}
-            size={28}
-            color="#1976D2"
-          />
+        <View style={styles.headerButtons}>
+          <TouchableOpacity onPress={clearAllItems} style={styles.clearAllIcon}>
+            <MaterialIcons name="delete-sweep" size={28} color="#C62828" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.collapseButton}>
+            <MaterialIcons
+              name={isFormVisible ? "expand-less" : "expand-more"}
+              size={28}
+              color="#1976D2"
+            />
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
 
@@ -485,9 +512,17 @@ const styles = StyleSheet.create({
     color: "#fff",
     textAlign: "center",
   },
-  collapseButton: {
+  headerButtons: {
     position: "absolute",
     right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  clearAllIcon: {
+    padding: 8,
+  },
+  collapseButton: {
     padding: 8,
   },
   inputContainer: {
@@ -601,6 +636,20 @@ const styles = StyleSheet.create({
   },
   list: {
     marginBottom: 20,
+  },
+  clearAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#C62828",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  clearAllText: {
+    color: "#fff",
+    fontSize: 16,
+    marginLeft: 6,
   },
 });
 

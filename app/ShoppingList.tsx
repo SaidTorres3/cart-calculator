@@ -17,9 +17,7 @@ import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_KEY } from "../config";
-import {
-  GoogleGenerativeAI,
-} from "@google/generative-ai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 interface Item {
   id: string;
@@ -157,7 +155,7 @@ const ShoppingList: React.FC = () => {
   
                               Output:
                               Return only a JSON array or an empty array ([]) for random text.
-                            `
+                            `,
         });
 
         const result = await model.generateContent([
@@ -347,6 +345,32 @@ const ShoppingList: React.FC = () => {
       .toFixed(2);
   };
 
+  // New function to clear all items
+  const clearAllItems = () => {
+    if (items.length === 0) {
+      Alert.alert("No Items", "There are no items to clear.");
+      return;
+    }
+
+    Alert.alert(
+      "Clear All Items",
+      "Are you sure you want to remove all items from your shopping list?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Clear All",
+          style: "destructive",
+          onPress: () => {
+            setItems([]);
+          },
+        },
+      ]
+    );
+  };
+
   const renderItem = ({ item }: { item: Item }) => {
     const isEditing = item.id === editingId;
     const borderColor = rainbowAnim
@@ -455,12 +479,17 @@ const ShoppingList: React.FC = () => {
         onPress={() => setIsFormVisible(!isFormVisible)}
       >
         <Text style={styles.title}>Cart Calculator</Text>
-        <View style={styles.collapseButton}>
-          <MaterialIcons
-            name={isFormVisible ? "expand-less" : "expand-more"}
-            size={28}
-            color="#1976D2"
-          />
+        <View style={styles.headerButtons}>
+          <TouchableOpacity onPress={clearAllItems} style={styles.clearAllIcon}>
+            <MaterialIcons name="delete-sweep" size={28} color="#C62828" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.collapseButton}>
+            <MaterialIcons
+              name={isFormVisible ? "expand-less" : "expand-more"}
+              size={28}
+              color="#1976D2"
+            />
+          </TouchableOpacity>
         </View>
       </TouchableOpacity>
 
@@ -477,7 +506,7 @@ const ShoppingList: React.FC = () => {
             onSubmitEditing={() => priceRef.current?.focus()}
             blurOnSubmit={false}
           />
-            <View style={styles.priceQuantityContainer}>
+          <View style={styles.priceQuantityContainer}>
             <TextInput
               ref={priceRef}
               style={[styles.input, styles.priceInput]}
@@ -501,15 +530,15 @@ const ShoppingList: React.FC = () => {
               keyboardType="numeric"
               returnKeyType="done"
               onSubmitEditing={() => {
-              if (editingId) {
-                updateItem();
-              } else {
-                addItem();
-              }
-              productRef.current?.focus();
+                if (editingId) {
+                  updateItem();
+                } else {
+                  addItem();
+                }
+                productRef.current?.focus();
               }}
             />
-            </View>
+          </View>
           {editingId ? (
             <View style={styles.editButtonsContainer}>
               <TouchableOpacity
@@ -581,9 +610,17 @@ const styles = StyleSheet.create({
     color: "#fff",
     textAlign: "center",
   },
-  collapseButton: {
+  headerButtons: {
     position: "absolute",
     right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  clearAllIcon: {
+    padding: 8,
+  },
+  collapseButton: {
     padding: 8,
   },
   inputContainer: {
@@ -699,6 +736,19 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#fff",
     textAlign: "right",
+  },
+  clearAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#C62828",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  clearAllText: {
+    color: "#fff",
+    fontSize: 16,
+    marginLeft: 6,
   },
   list: {
     marginBottom: 20,
