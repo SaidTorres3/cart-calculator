@@ -477,14 +477,14 @@ const ShoppingList: React.FC = () => {
             onSubmitEditing={() => priceRef.current?.focus()}
             blurOnSubmit={false}
           />
-          <View style={styles.priceQuantityContainer}>
+            <View style={styles.priceQuantityContainer}>
             <TextInput
               ref={priceRef}
               style={[styles.input, styles.priceInput]}
               placeholder="Precio"
               placeholderTextColor="#666"
               value={price}
-              onChangeText={(text) => setPrice(text.replace(/[^0-9]/g, ""))}
+              onChangeText={(text) => setPrice(text.replace(/[^0-9.]/g, ""))}
               keyboardType="numeric"
               returnKeyType="next"
               onSubmitEditing={() => quantityRef.current?.focus()}
@@ -497,19 +497,19 @@ const ShoppingList: React.FC = () => {
               placeholder="Cantidad"
               placeholderTextColor="#666"
               value={quantity}
-              onChangeText={(text) => setQuantity(text.replace(/[^0-9]/g, ""))}
+              onChangeText={(text) => setQuantity(text.replace(/[^0-9.]/g, ""))}
               keyboardType="numeric"
               returnKeyType="done"
               onSubmitEditing={() => {
-                if (editingId) {
-                  updateItem();
-                } else {
-                  addItem();
-                }
-                productRef.current?.focus();
+              if (editingId) {
+                updateItem();
+              } else {
+                addItem();
+              }
+              productRef.current?.focus();
               }}
             />
-          </View>
+            </View>
           {editingId ? (
             <View style={styles.editButtonsContainer}>
               <TouchableOpacity
