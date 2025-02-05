@@ -31,7 +31,7 @@ const LLMChat: React.FC = () => {
     try {
       const genAI = new GoogleGenerativeAI(API_KEY);
       const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash-exp",
+        model: "gemini-2.0-flash",
         systemInstruction: `You are a helpful assistant that always responds at the end with a smiling emoji.`,
       });
 
