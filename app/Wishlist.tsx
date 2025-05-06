@@ -137,8 +137,6 @@ const Wishlist: React.FC = () => {
           model: "gemini-2.0-flash",
           systemInstruction: `Extract shopping items from text and return a JSON array of objects with properties: product (string).
   
-                          Rules:
-                          
                           Examples:
                           "una servilleta" → [{"product":"Servilleta"}]
                           "2 desodorantes" → [{"product":"2 Desodorantes"}]

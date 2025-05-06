@@ -150,7 +150,7 @@ const ShoppingList: React.FC = () => {
                               "una servilleta" → [{"product":"Servilleta","quantity":1.0,"price":0.0}]
                               "un rollo de 100" → [{"product":"Rollo","quantity":1.0,"price":100.0}]
                               "2 desodorantes de 45 pesos y uno de 25 pesos" → [{"product":"Desodorante","quantity":2.0,"price":45.0},{"product":"Desodorante","quantity":1.0,"price":25.0}]
-                              "3 bolsas de leche 15 pesos" → [{"product":"Leche","quantity":3.0,"price":45.0}]
+                              "3 bolsas de leche 15 pesos" → [{"product":"Bolsa de Leche","quantity":3.0,"price":15.0}]
                               "323 gramos de tomate a 80 el kilo" → [{"product":"Tomate","quantity":0.323,"price":80.0}]
   
                               Output:
