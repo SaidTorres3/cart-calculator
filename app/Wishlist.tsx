@@ -17,7 +17,7 @@ import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_KEY } from "../config";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 interface Item {
   id: string;
@@ -132,37 +132,51 @@ const Wishlist: React.FC = () => {
         const base64Audio = await FileSystem.readAsStringAsync(uri, {
           encoding: FileSystem.EncodingType.Base64,
         });
-        const genAI = new GoogleGenerativeAI(API_KEY);
-        const model = genAI.getGenerativeModel({
-          model: "gemini-2.0-flash",
-          systemInstruction: `Extract shopping items from text and return a JSON array of objects with properties: product (string).
-  
-                          Examples:
-                          "una servilleta" → [{"product":"Servilleta"}]
-                          "2 desodorantes" → [{"product":"2 Desodorantes"}]
-                          "3 bolsas de leche" → [{"product":"3 Bolsas de Leche"}]
-                          "Tomates" → [{"product":"Tomates"}]
-  
-                          Output:
-                          Return only a JSON array or an empty array ([]) for random text.
-                        `,
+
+        const genAI = new GoogleGenAI({ apiKey: API_KEY });
+
+        const result = await genAI.models.generateContent({
+          model: "gemini-2.5-flash-lite-preview-06-17",
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: `Extract shopping items from text and return a JSON array of objects with properties: product (string).
+
+  Examples:
+  "una servilleta" → [{"product":"Servilleta"}]
+  "2 desodorantes" → [{"product":"2 Desodorantes"}]
+  "3 bolsas de leche" → [{"product":"3 Bolsas de Leche"}]
+  "Tomates" → [{"product":"Tomates"}]
+
+  Output:
+  Return only a JSON array or an empty array ([]) for random text.`,
+                },
+                {
+                  inlineData: {
+                    mimeType: "audio/wav",
+                    data: base64Audio,
+                  },
+                },
+              ],
+            },
+          ],
+          config: {
+            thinkingConfig: {
+              thinkingBudget: 0,
+            }
+          }
         });
 
-        const result = await model.generateContent([
-          {
-            text: "Text: ",
-          },
-          {
-            inlineData: {
-              mimeType: "audio/wav",
-              data: base64Audio,
-            },
-          },
-        ]);
-        const completionData = result.response.text();
+        const completionData = result.text;
 
         console.log("Gemini response:", completionData);
+
         try {
+          if (!completionData) {
+            throw new Error("No response from Gemini API");
+          }
           const cleanResponse = completionData
             .replace(/```json\n?/g, "")
             .replace(/```\n?/g, "")
@@ -192,12 +206,7 @@ const Wishlist: React.FC = () => {
             }).start();
           });
         } catch (parseError) {
-          console.error(
-            "Parse error:",
-            parseError,
-            "Response:",
-            completionData
-          );
+          console.error("Parse error:", parseError, "Response:", completionData);
           Alert.alert("Error", "Failed to parse the response");
         }
       }
@@ -206,6 +215,7 @@ const Wishlist: React.FC = () => {
       Alert.alert("Error", "Failed to process voice command");
     }
   };
+
 
   const productRef = useRef<TextInput>(null);
 

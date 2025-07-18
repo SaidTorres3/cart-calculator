@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import { API_KEY } from "../config";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 const LLMChat: React.FC = () => {
   const [messages, setMessages] = useState<
@@ -29,26 +29,35 @@ const LLMChat: React.FC = () => {
     setLoading(true);
 
     try {
-      const genAI = new GoogleGenerativeAI(API_KEY);
-      const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
-        systemInstruction: `You are a helpful assistant that always responds at the end with a smiling emoji.`,
-      });
+      const genAI = new GoogleGenAI({ apiKey: API_KEY });
 
-      const result = await model.generateContent({
+      const result = await genAI.models.generateContent({
+        model: "gemini-2.5-flash-lite-preview-06-17",
         contents: [
           ...messages.map((m) => ({
             role: m.role,
             parts: [{ text: m.content }],
           })),
-          { role: "user", parts: [{ text: inputText }] },
+          {
+            role: "user",
+            parts: [
+              {
+                text: inputText,
+              },
+            ],
+          },
         ],
+        config: {
+          systemInstruction: `You are a helpful assistant that always responds at the end with a smiling emoji.`,
+          thinkingConfig: {
+            thinkingBudget: 0
+          }
+        },
       });
 
-      const completionData = result.response.text();
       const assistantMessage: { role: "assistant"; content: string } = {
         role: "assistant",
-        content: completionData,
+        content: result.text ?? "",
       };
       setMessages((prevMessages) => [...prevMessages, assistantMessage]);
     } catch (error) {

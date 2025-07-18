@@ -17,7 +17,7 @@ import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_KEY } from "../config";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 interface Item {
   id: string;
@@ -136,42 +136,55 @@ const ShoppingList: React.FC = () => {
         const base64Audio = await FileSystem.readAsStringAsync(uri, {
           encoding: FileSystem.EncodingType.Base64,
         });
-        const genAI = new GoogleGenerativeAI(API_KEY);
-        const model = genAI.getGenerativeModel({
-          model: "gemini-2.0-flash",
-          systemInstruction: `Extract shopping items from text and return a JSON array of objects with properties: product (string), quantity (float), and price (float).
-  
-                              Rules:
-                              Product after a number (e.g., "rollo de 100") → interpret as price.
-                              Default: quantity = 1.0, price = 0.0.
-                              Convert grams to kilograms (e.g., "500 gramos" = 0.5).
-  
-                              Examples:
-                              "una servilleta" → [{"product":"Servilleta","quantity":1.0,"price":0.0}]
-                              "un rollo de 100" → [{"product":"Rollo","quantity":1.0,"price":100.0}]
-                              "2 desodorantes de 45 pesos y uno de 25 pesos" → [{"product":"Desodorante","quantity":2.0,"price":45.0},{"product":"Desodorante","quantity":1.0,"price":25.0}]
-                              "3 bolsas de leche 15 pesos" → [{"product":"Bolsa de Leche","quantity":3.0,"price":15.0}]
-                              "323 gramos de tomate a 80 el kilo" → [{"product":"Tomate","quantity":0.323,"price":80.0}]
-  
-                              Output:
-                              Return only a JSON array or an empty array ([]) for random text.
-                            `,
-        });
+        const genAI = new GoogleGenAI({ apiKey: API_KEY });
 
-        const result = await model.generateContent([
-          {
-            text: "Text: ",
-          },
-          {
-            inlineData: {
-              mimeType: "audio/wav",
-              data: base64Audio,
+        const result = await genAI.models.generateContent({
+          model: "gemini-2.5-flash-lite-preview-06-17",
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: `Extract shopping items from text and return a JSON array of objects with properties: product (string), quantity (float), and price (float).
+        Rules:
+        Product after a number (e.g., "rollo de 100") → interpret as price.
+        Default: quantity = 1.0, price = 0.0.
+        Convert grams to kilograms (e.g., "500 gramos" = 0.5).
+
+        Examples:
+        "una servilleta" → [{"product":"Servilleta","quantity":1.0,"price":0.0}]
+        "un rollo de 100" → [{"product":"Rollo","quantity":1.0,"price":100.0}]
+        "2 desodorantes de 45 pesos y uno de 25 pesos" → [{"product":"Desodorante","quantity":2.0,"price":45.0},{"product":"Desodorante","quantity":1.0,"price":25.0}]
+        "3 bolsas de leche 15 pesos" → [{"product":"Leche","quantity":3.0,"price":45.0}]
+        "323 gramos de tomate a 80 el kilo" → [{"product":"Tomate","quantity":0.323,"price":80.0}]
+
+        Output:
+        Return only a JSON array or an empty array ([]) for random text.
+        `,
+                },
+                {
+                  inlineData: {
+                    mimeType: "audio/wav",
+                    data: base64Audio,
+                  },
+                },
+              ],
+            },
+          ],
+          config: {
+            thinkingConfig: {
+              thinkingBudget: 0,
             },
           },
-        ]);
-        const completionData = result.response.text();
+        });
+
+        const completionData = result.text;
+
         console.log("Gemini response:", completionData);
         try {
+          if (!completionData) {
+            throw new Error("No response from Gemini API");
+          }
           const cleanResponse = completionData
             .replace(/```json\n?/g, "")
             .replace(/```\n?/g, "")
