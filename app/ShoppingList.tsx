@@ -546,6 +546,7 @@ const ShoppingList: React.FC = () => {
             blurOnSubmit={false}
           />
           <View style={styles.priceQuantityContainer}>
+            <Text style={styles.xSymbol}>$</Text>
             <TextInput
               ref={priceRef}
               style={[styles.input, styles.priceInput]}
