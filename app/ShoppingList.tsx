@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   View,
+  KeyboardAvoidingView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -512,7 +513,11 @@ const ShoppingList: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={80}
+    >
       <TouchableOpacity
         style={styles.header}
         onPress={() => setIsFormVisible(!isFormVisible)}
@@ -544,9 +549,12 @@ const ShoppingList: React.FC = () => {
         onScrollToIndexFailed={() => {}}
       />
 
-      <View style={styles.totalContainer}>
+      <TouchableOpacity
+        style={styles.totalContainer}
+        onPress={() => setIsFormVisible(!isFormVisible)}
+      >
         <Text style={styles.totalText}>Total: $ {calculateTotal()}</Text>
-      </View>
+      </TouchableOpacity>
 
       {isFormVisible && (
         <View style={styles.inputContainer}>
@@ -627,7 +635,7 @@ const ShoppingList: React.FC = () => {
           </TouchableOpacity>
         </View>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

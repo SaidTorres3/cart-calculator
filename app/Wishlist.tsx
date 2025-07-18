@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   View,
+  KeyboardAvoidingView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -413,7 +414,11 @@ const Wishlist: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={80}
+    >
       <TouchableOpacity
         style={styles.header}
         onPress={() => setIsFormVisible(!isFormVisible)}
@@ -497,7 +502,7 @@ const Wishlist: React.FC = () => {
           </TouchableOpacity>
         </View>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
