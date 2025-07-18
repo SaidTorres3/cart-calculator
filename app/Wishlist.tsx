@@ -433,6 +433,18 @@ const Wishlist: React.FC = () => {
         </View>
       </TouchableOpacity>
 
+      <FlatList
+        ref={flatListRef}
+        data={items}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        style={styles.list}
+        initialNumToRender={20}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        onScrollToIndexFailed={() => {}}
+      />
+
       {isFormVisible && (
         <View style={styles.inputContainer}>
           <TextInput
@@ -485,18 +497,6 @@ const Wishlist: React.FC = () => {
           </TouchableOpacity>
         </View>
       )}
-
-      <FlatList
-        ref={flatListRef}
-        data={items}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        style={styles.list}
-        initialNumToRender={20}
-        maxToRenderPerBatch={10}
-        windowSize={10}
-        onScrollToIndexFailed={() => {}}
-      />
     </View>
   );
 };
