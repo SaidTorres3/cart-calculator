@@ -515,8 +515,8 @@ const ShoppingList: React.FC = () => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "position"}
-      keyboardVerticalOffset={80}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={0}
     >
       <TouchableOpacity
         style={styles.header}
@@ -543,7 +543,7 @@ const ShoppingList: React.FC = () => {
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         style={styles.list}
-        contentContainerStyle={{ paddingBottom: isFormVisible ? 180 : 100 }}
+        contentContainerStyle={{ paddingBottom: isFormVisible ? 250 : 100 }}
         initialNumToRender={20}
         maxToRenderPerBatch={10}
         windowSize={10}
@@ -551,7 +551,10 @@ const ShoppingList: React.FC = () => {
       />
 
       <TouchableOpacity
-        style={styles.totalContainer}
+        style={[
+          styles.totalContainer,
+          { marginBottom: isFormVisible ? 120 : 20 },
+        ]}
         onPress={() => setIsFormVisible(!isFormVisible)}
       >
         <Text style={styles.totalText}>Total: $ {calculateTotal()}</Text>
