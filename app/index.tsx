@@ -1,7 +1,7 @@
 import { SafeAreaView, StyleSheet, Platform, StatusBar, View, Text, TouchableOpacity, PanResponder, GestureResponderEvent, PanResponderGestureState } from "react-native";
 import ShoppingList from "./ShoppingList";
 import Wishlist from "./Wishlist";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import * as SplashScreen from 'expo-splash-screen';
 import { MaterialIcons } from '@expo/vector-icons';
 import LLMChat from "./LLMChat";
@@ -18,35 +18,45 @@ export default function Index() {
   const screens: ('shoppingList' | 'wishlist' | 'llmChat')[] =
     LLM_CHAT_ENABLED ? ['shoppingList', 'wishlist', 'llmChat'] : ['shoppingList', 'wishlist'];
 
-  const switchToNext = () => {
-    const currentIndex = screens.indexOf(activeScreen);
-    const nextIndex = (currentIndex + 1) % screens.length;
-    setActiveScreen(screens[nextIndex]);
-  };
+  const switchToNext = useCallback(() => {
+    setActiveScreen((prev) => {
+      const currentIndex = screens.indexOf(prev);
+      return currentIndex < screens.length - 1 ? screens[currentIndex + 1] : prev;
+    });
+  }, [screens]);
 
-  const switchToPrev = () => {
-    const currentIndex = screens.indexOf(activeScreen);
-    const prevIndex = (currentIndex - 1 + screens.length) % screens.length;
-    setActiveScreen(screens[prevIndex]);
-  };
+  const switchToPrev = useCallback(() => {
+    setActiveScreen((prev) => {
+      const currentIndex = screens.indexOf(prev);
+      return currentIndex > 0 ? screens[currentIndex - 1] : prev;
+    });
+  }, [screens]);
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_: GestureResponderEvent, gestureState: PanResponderGestureState) => {
-        return (
-          Math.abs(gestureState.dx) > Math.abs(gestureState.dy) &&
-          Math.abs(gestureState.dx) > 20
-        );
-      },
-      onPanResponderRelease: (_: GestureResponderEvent, gestureState: PanResponderGestureState) => {
-        if (gestureState.dx > 50) {
-          switchToPrev();
-        } else if (gestureState.dx < -50) {
-          switchToNext();
-        }
-      },
-    })
-  ).current;
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (
+          _: GestureResponderEvent,
+          gestureState: PanResponderGestureState
+        ) => {
+          return (
+            Math.abs(gestureState.dx) > Math.abs(gestureState.dy) &&
+            Math.abs(gestureState.dx) > 20
+          );
+        },
+        onPanResponderRelease: (
+          _: GestureResponderEvent,
+          gestureState: PanResponderGestureState
+        ) => {
+          if (gestureState.dx > 50) {
+            switchToPrev();
+          } else if (gestureState.dx < -50) {
+            switchToNext();
+          }
+        },
+      }),
+    [switchToPrev, switchToNext]
+  );
 
   useEffect(() => {
     async function prepare() {
