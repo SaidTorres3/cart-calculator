@@ -543,6 +543,7 @@ const ShoppingList: React.FC = () => {
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         style={styles.list}
+        contentContainerStyle={{ paddingBottom: isFormVisible ? 180 : 100 }}
         initialNumToRender={20}
         maxToRenderPerBatch={10}
         windowSize={10}
@@ -672,8 +673,11 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   inputContainer: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    bottom: 20,
     gap: 10,
-    marginBottom: 20,
     backgroundColor: "#242424",
     padding: 15,
     borderRadius: 10,
