@@ -416,7 +416,7 @@ const Wishlist: React.FC = () => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : "position"}
       keyboardVerticalOffset={80}
     >
       <TouchableOpacity
