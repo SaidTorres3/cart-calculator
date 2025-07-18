@@ -25,6 +25,7 @@ interface Item {
   quantity: string;
   price: string;
   visible: boolean;
+  priceUncertain?: boolean;
   fadeAnim?: Animated.Value;
 }
 
@@ -61,6 +62,7 @@ const ShoppingList: React.FC = () => {
           // Re-initialize fadeAnim for each item
           const restoredItems = parsedItems.map((i) => ({
             ...i,
+            priceUncertain: i.priceUncertain ?? false,
             fadeAnim: new Animated.Value(1),
           }));
           setItems(restoredItems);
@@ -202,6 +204,7 @@ const ShoppingList: React.FC = () => {
             quantity: result.quantity?.toString() || "",
             price: result.price?.toString() || "",
             visible: true,
+            priceUncertain: false,
             fadeAnim: new Animated.Value(0),
           }));
 
@@ -271,6 +274,7 @@ const ShoppingList: React.FC = () => {
       quantity: quantity || "1",
       price: price || "0",
       visible: true,
+      priceUncertain: false,
       fadeAnim: new Animated.Value(0),
     };
 
@@ -348,6 +352,14 @@ const ShoppingList: React.FC = () => {
     );
   };
 
+  const togglePriceUncertain = (id: string) => {
+    setItems(
+      items.map((item) =>
+        item.id === id ? { ...item, priceUncertain: !item.priceUncertain } : item
+      )
+    );
+  };
+
   const calculateTotal = () => {
     return items
       .filter((item) => item.visible)
@@ -406,6 +418,7 @@ const ShoppingList: React.FC = () => {
           style={[
             styles.item,
             !item.visible && styles.hiddenItem,
+            item.priceUncertain && styles.uncertainItem,
             isEditing && {
               borderWidth: 2,
               borderColor: borderColor,
@@ -466,6 +479,19 @@ const ShoppingList: React.FC = () => {
             >
               <MaterialIcons
                 name={item.visible ? "visibility" : "visibility-off"}
+                size={20}
+                color="white"
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.optionalButton]}
+              onPress={(e) => {
+                e.stopPropagation();
+                togglePriceUncertain(item.id);
+              }}
+            >
+              <MaterialIcons
+                name="help-outline"
                 size={20}
                 color="white"
               />
@@ -698,6 +724,9 @@ const styles = StyleSheet.create({
   visibilityButton: {
     backgroundColor: "#1976D2",
   },
+  optionalButton: {
+    backgroundColor: "#7B1FA2",
+  },
   removeButton: {
     backgroundColor: "#C62828",
   },
@@ -734,6 +763,9 @@ const styles = StyleSheet.create({
   hiddenItem: {
     opacity: 0.5,
     backgroundColor: "#1e1e1e",
+  },
+  uncertainItem: {
+    backgroundColor: "#4527A0",
   },
   hiddenText: {
     color: "#666",
