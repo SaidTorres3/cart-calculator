@@ -1,50 +1,57 @@
-# Welcome to your Expo app 👋
+# Cart Calculator
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Cart Calculator is a React Native app built with Expo that helps track your shopping expenses. The app lets you manage two lists:
 
-## Get started
+- **Shopping List** – items you plan to buy, with quantity and price.
+- **Wishlist** – items you'd like to purchase later.
 
-1. Install dependencies
+The shopping list integrates with Google Gemini via the `@google/genai` SDK. You can record your voice and Gemini will parse it into structured items. Optionally an AI chat screen can be enabled.
 
+## Features
+
+- Add, edit and remove shopping or wishlist items.
+- Voice commands for the shopping list using Gemini.
+- Local data stored with `AsyncStorage` so your lists persist between sessions.
+- Optional **LLM Chat** screen for talking to the model.
+- Works on Android, iOS and the web through Expo.
+
+## Setup
+
+1. Install [Node.js](https://nodejs.org/) and [Expo CLI](https://docs.expo.dev/get-started/installation/).
+2. Copy `.env.example` to `.env` and fill in your Gemini API key:
+   ```env
+   EXPO_PUBLIC_GEMINI_API_KEY=your-api-key
+   EXPO_PUBLIC_LLM_CHAT_ENABLED=true
+   ```
+3. Install dependencies:
    ```bash
    npm install
    ```
-
-2. Start the app
-
+4. Start the development server:
    ```bash
-    npx expo start
+   npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+## Running tests
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+This project uses Jest through `jest-expo`:
 
 ```bash
-npm run reset-project
+npm test
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+(There are currently no test files, so Jest will exit immediately.)
 
-## Learn more
+## Building
 
-To learn more about developing your project with Expo, look at the following resources:
+To create a release build for Android you can use the provided script:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+./runAndroidBuild.ps1
+```
 
-## Join the community
+For iOS or other targets see the [Expo build documentation](https://docs.expo.dev/build/introduction/).
 
-Join our community of developers creating universal apps.
+## License
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+This project is licensed under the MIT License.
