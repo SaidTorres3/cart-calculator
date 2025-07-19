@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   View,
+  KeyboardAvoidingView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -40,6 +41,7 @@ const ShoppingList: React.FC = () => {
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isFormVisible, setIsFormVisible] = useState(true);
+  const [formHeight, setFormHeight] = useState(0);
   const rainbowAnim = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
 
@@ -512,7 +514,11 @@ const ShoppingList: React.FC = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={0}
+    >
       <TouchableOpacity
         style={styles.header}
         onPress={() => setIsFormVisible(!isFormVisible)}
@@ -532,8 +538,31 @@ const ShoppingList: React.FC = () => {
         </View>
       </TouchableOpacity>
 
+      <FlatList
+        ref={flatListRef}
+        data={items}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        style={styles.list}
+        contentContainerStyle={{ paddingBottom: isFormVisible ? formHeight + 160 : 120 }}
+        initialNumToRender={20}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        onScrollToIndexFailed={() => {}}
+      />
+
+      <TouchableOpacity
+        style={[
+          styles.totalContainer,
+          { bottom: isFormVisible ? formHeight + 20 : 20 },
+        ]}
+        onPress={() => setIsFormVisible(!isFormVisible)}
+      >
+        <Text style={styles.totalText}>Total: $ {calculateTotal()}</Text>
+      </TouchableOpacity>
+
       {isFormVisible && (
-        <View style={styles.inputContainer}>
+        <View style={styles.inputContainer} onLayout={(e) => setFormHeight(e.nativeEvent.layout.height)}>
           <TextInput
             ref={productRef}
             style={styles.input}
@@ -611,23 +640,7 @@ const ShoppingList: React.FC = () => {
           </TouchableOpacity>
         </View>
       )}
-
-      <FlatList
-        ref={flatListRef}
-        data={items}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        style={styles.list}
-        initialNumToRender={20}
-        maxToRenderPerBatch={10}
-        windowSize={10}
-        onScrollToIndexFailed={() => {}}
-      />
-
-      <View style={styles.totalContainer}>
-        <Text style={styles.totalText}>Total: $ {calculateTotal()}</Text>
-      </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -664,11 +677,15 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   inputContainer: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    bottom: 20,
     gap: 10,
-    marginBottom: 20,
     backgroundColor: "#242424",
     padding: 15,
     borderRadius: 10,
+    zIndex: 1,
   },
   input: {
     backgroundColor: "#333",
@@ -772,15 +789,20 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   totalContainer: {
-    marginTop: 20,
-    padding: 15,
-    backgroundColor: "#242424",
-    borderRadius: 8,
+    position: "absolute",
+    left: 20,
+    right: 20,
+    padding: 7,
+    backgroundColor: "#333",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#4CAF50",
+    zIndex: 2,
   },
   totalText: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: "bold",
-    color: "#fff",
+    color: "#4CAF50",
     textAlign: "right",
   },
   clearAllButton: {
