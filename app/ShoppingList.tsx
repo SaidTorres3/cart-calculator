@@ -554,7 +554,7 @@ const ShoppingList: React.FC = () => {
       <TouchableOpacity
         style={[
           styles.totalContainer,
-          { bottom: isFormVisible ? formHeight + 40 : 20 },
+          { bottom: isFormVisible ? formHeight + 20 : 20 },
         ]}
         onPress={() => setIsFormVisible(!isFormVisible)}
       >
@@ -792,7 +792,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 20,
     right: 20,
-    padding: 20,
+    padding: 7,
     backgroundColor: "#333",
     borderRadius: 10,
     borderWidth: 1,
