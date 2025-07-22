@@ -7,7 +7,7 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
-import { API_KEY } from "../config";
+import { getApiKey } from "../config";
 import { GoogleGenAI } from "@google/genai";
 import { supportsThinkingConfig } from "./aiUtils";
 
@@ -34,7 +34,7 @@ const LLMChat: React.FC<LLMChatProps> = ({ selectedModel }) => {
     setLoading(true);
 
     try {
-      const genAI = new GoogleGenAI({ apiKey: API_KEY });
+      const genAI = new GoogleGenAI({ apiKey: getApiKey() });
 
       const aiParams: any = {
         model: selectedModel,

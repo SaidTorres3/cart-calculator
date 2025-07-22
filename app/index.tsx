@@ -21,7 +21,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import LLMChat from "./LLMChat";
 import SettingsModal from "./SettingsModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { LLM_CHAT_ENABLED } from "../config";
+import { LLM_CHAT_ENABLED, initApiKey, clearApiKey } from "../config";
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -77,6 +77,11 @@ export default function Index() {
     await AsyncStorage.setItem('AUTO_HIDE_WISHLIST_ON_ADD', newValue.toString());
   };
 
+  const handleClearApiKey = async () => {
+    await AsyncStorage.removeItem('GEMINI_API_KEY');
+    clearApiKey();
+  };
+
   const panResponder = useMemo(
     () =>
       PanResponder.create({
@@ -110,6 +115,7 @@ export default function Index() {
     async function prepare() {
       try {
         // Add any initialization logic here if needed
+        await initApiKey();
         await new Promise((resolve) => setTimeout(resolve, 100)); // Small delay to ensure proper initialization
       } catch (e) {
         console.warn(e);
@@ -232,6 +238,7 @@ export default function Index() {
         onSelectModel={handleSelectModel}
         autoHideWishlistOnAdd={autoHideWishlistOnAdd}
         onToggleAutoHide={toggleAutoHide}
+        onClearApiKey={handleClearApiKey}
       />
     </SafeAreaView>
   );

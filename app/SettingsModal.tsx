@@ -9,6 +9,7 @@ interface SettingsModalProps {
   onSelectModel: (model: string) => void;
   autoHideWishlistOnAdd: boolean;
   onToggleAutoHide: () => void;
+  onClearApiKey: () => void;
 }
 
 const MODELS = [
@@ -27,6 +28,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   onSelectModel,
   autoHideWishlistOnAdd,
   onToggleAutoHide,
+  onClearApiKey,
 }) => {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -53,6 +55,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               onValueChange={onToggleAutoHide}
             />
           </View>
+          <TouchableOpacity
+            style={styles.removeKeyButton}
+            onPress={onClearApiKey}
+          >
+            <Text style={styles.removeKeyText}>Remove Gemini API Key</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Text style={styles.closeText}>Close</Text>
           </TouchableOpacity>
@@ -109,6 +117,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     paddingHorizontal: 10,
+  },
+  removeKeyButton: {
+    backgroundColor: '#C62828',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  removeKeyText: {
+    color: '#fff',
+    fontSize: 16,
   },
   closeButton: {
     marginTop: 10,

@@ -18,7 +18,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_KEY } from "../config";
+import { getApiKey } from "../config";
 import { GoogleGenAI } from "@google/genai";
 import { supportsThinkingConfig } from "./aiUtils";
 
@@ -61,7 +61,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
     newItems: Item[]
   ): Promise<Item[]> => {
     try {
-      const genAI = new GoogleGenAI({ apiKey: API_KEY });
+      const genAI = new GoogleGenAI({ apiKey: getApiKey() });
       const prompt =
         'You will receive a JSON array called WISHLIST and another array NEW_ITEMS. ' +
         'For every entry in NEW_ITEMS, if a semantically equivalent product exists in WISHLIST, ' +
@@ -227,7 +227,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
         const base64Audio = await FileSystem.readAsStringAsync(uri, {
           encoding: FileSystem.EncodingType.Base64,
         });
-        const genAI = new GoogleGenAI({ apiKey: API_KEY });
+        const genAI = new GoogleGenAI({ apiKey: getApiKey() });
 
         const aiParams: any = {
           model: selectedModel,
