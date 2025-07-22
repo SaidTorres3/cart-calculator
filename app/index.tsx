@@ -1,4 +1,4 @@
-import { SafeAreaView, StyleSheet, Platform, StatusBar, View, Text, TouchableOpacity, PanResponder, GestureResponderEvent, PanResponderGestureState } from "react-native";
+import { SafeAreaView, StyleSheet, Platform, StatusBar, View, Text, TouchableOpacity, PanResponder, GestureResponderEvent, PanResponderGestureState, Keyboard, AppState, TextInput } from "react-native";
 import ShoppingList from "./ShoppingList";
 import Wishlist from "./Wishlist";
 import { useEffect, useState, useCallback, useMemo } from "react";
@@ -15,10 +15,19 @@ export default function Index() {
   const [error, setError] = useState<Error | null>(null);
   const [activeScreen, setActiveScreen] = useState<'shoppingList' | 'wishlist' | 'llmChat'>('shoppingList');
 
+  const hideKeyboard = () => {
+    Keyboard.dismiss();
+    const input = (TextInput as any).State?.currentlyFocusedInput?.();
+    if (input && typeof input.blur === 'function') {
+      input.blur();
+    }
+  };
+
   const screens: ('shoppingList' | 'wishlist' | 'llmChat')[] =
     LLM_CHAT_ENABLED ? ['shoppingList', 'wishlist', 'llmChat'] : ['shoppingList', 'wishlist'];
 
   const switchToNext = useCallback(() => {
+    hideKeyboard();
     setActiveScreen((prev) => {
       const currentIndex = screens.indexOf(prev);
       return currentIndex < screens.length - 1 ? screens[currentIndex + 1] : prev;
@@ -26,6 +35,7 @@ export default function Index() {
   }, [screens]);
 
   const switchToPrev = useCallback(() => {
+    hideKeyboard();
     setActiveScreen((prev) => {
       const currentIndex = screens.indexOf(prev);
       return currentIndex > 0 ? screens[currentIndex - 1] : prev;
@@ -43,6 +53,9 @@ export default function Index() {
             Math.abs(gestureState.dx) > Math.abs(gestureState.dy) &&
             Math.abs(gestureState.dx) > 20
           );
+        },
+        onPanResponderGrant: () => {
+          hideKeyboard();
         },
         onPanResponderRelease: (
           _: GestureResponderEvent,
@@ -75,6 +88,19 @@ export default function Index() {
     prepare();
   }, []);
 
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') {
+        hideKeyboard();
+      }
+    });
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    hideKeyboard();
+  }, [activeScreen]);
+
   if (!isReady) {
     return null;
   }
@@ -90,14 +116,14 @@ export default function Index() {
   return (
     <SafeAreaView style={styles.container} {...panResponder.panHandlers}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => setActiveScreen('shoppingList')}>
+        <TouchableOpacity onPressIn={hideKeyboard} onPress={() => setActiveScreen('shoppingList')}>
           <Text style={activeScreen === 'shoppingList' ? styles.activeHeaderText : styles.inactiveHeaderText}>Shopping List</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setActiveScreen('wishlist')}>
+        <TouchableOpacity onPressIn={hideKeyboard} onPress={() => setActiveScreen('wishlist')}>
           <Text style={activeScreen === 'wishlist' ? styles.activeHeaderText : styles.inactiveHeaderText}>Wishlist</Text>
         </TouchableOpacity>
         {LLM_CHAT_ENABLED && (
-          <TouchableOpacity onPress={() => setActiveScreen('llmChat')}>
+          <TouchableOpacity onPressIn={hideKeyboard} onPress={() => setActiveScreen('llmChat')}>
             <Text style={activeScreen === 'llmChat' ? styles.activeHeaderText : styles.inactiveHeaderText}>LLM Chat</Text>
           </TouchableOpacity>
         )}
