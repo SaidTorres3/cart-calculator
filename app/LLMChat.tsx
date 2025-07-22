@@ -10,7 +10,11 @@ import {
 import { API_KEY } from "../config";
 import { GoogleGenAI } from "@google/genai";
 
-const LLMChat: React.FC = () => {
+interface LLMChatProps {
+  selectedModel: string;
+}
+
+const LLMChat: React.FC<LLMChatProps> = ({ selectedModel }) => {
   const [messages, setMessages] = useState<
     { role: "user" | "assistant"; content: string }[]
   >([]);
@@ -32,7 +36,7 @@ const LLMChat: React.FC = () => {
       const genAI = new GoogleGenAI({ apiKey: API_KEY });
 
       const result = await genAI.models.generateContent({
-        model: "gemini-2.5-flash-lite-preview-06-17",
+        model: selectedModel,
         contents: [
           ...messages.map((m) => ({
             role: m.role,

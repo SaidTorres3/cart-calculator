@@ -11,6 +11,7 @@ The shopping list integrates with Google Gemini via the `@google/genai` SDK. You
 
 - Add, edit and remove shopping or wishlist items.
 - Voice commands for the shopping list using Gemini.
+- Choose between different AI models via the new configuration menu.
 - Local data stored with `AsyncStorage` so your lists persist between sessions.
 - Optional **LLM Chat** screen for talking to the model.
 - Works on Android, iOS and the web through Expo.
@@ -31,6 +32,7 @@ The shopping list integrates with Google Gemini via the `@google/genai` SDK. You
    ```bash
    npx expo start
    ```
+5. Use the settings button in the app header to choose between the available AI models.
 
 ## Running tests
 
