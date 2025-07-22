@@ -1,9 +1,23 @@
-import { SafeAreaView, StyleSheet, Platform, StatusBar, View, Text, TouchableOpacity, PanResponder, GestureResponderEvent, PanResponderGestureState, Keyboard, AppState } from "react-native";
+import {
+  SafeAreaView,
+  StyleSheet,
+  Platform,
+  StatusBar,
+  View,
+  Text,
+  TouchableOpacity,
+  PanResponder,
+  GestureResponderEvent,
+  PanResponderGestureState,
+  Keyboard,
+  AppState,
+  TextInput,
+} from "react-native";
 import ShoppingList from "./ShoppingList";
 import Wishlist from "./Wishlist";
 import { useEffect, useState, useCallback, useMemo } from "react";
-import * as SplashScreen from 'expo-splash-screen';
-import { MaterialIcons } from '@expo/vector-icons';
+import * as SplashScreen from "expo-splash-screen";
+import { MaterialIcons } from "@expo/vector-icons";
 import LLMChat from "./LLMChat";
 import { LLM_CHAT_ENABLED } from "../config";
 
@@ -13,21 +27,34 @@ SplashScreen.preventAutoHideAsync();
 export default function Index() {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [activeScreen, setActiveScreen] = useState<'shoppingList' | 'wishlist' | 'llmChat'>('shoppingList');
+  const [activeScreen, setActiveScreen] = useState<
+    "shoppingList" | "wishlist" | "llmChat"
+  >("shoppingList");
 
-  const screens: ('shoppingList' | 'wishlist' | 'llmChat')[] =
-    LLM_CHAT_ENABLED ? ['shoppingList', 'wishlist', 'llmChat'] : ['shoppingList', 'wishlist'];
+  const hideKeyboard = () => {
+    Keyboard.dismiss();
+    const input = (TextInput as any).State?.currentlyFocusedInput?.();
+    if (input && typeof input.blur === "function") {
+      input.blur();
+    }
+  };
+
+  const screens: ("shoppingList" | "wishlist" | "llmChat")[] = LLM_CHAT_ENABLED
+    ? ["shoppingList", "wishlist", "llmChat"]
+    : ["shoppingList", "wishlist"];
 
   const switchToNext = useCallback(() => {
-    Keyboard.dismiss();
+    hideKeyboard();
     setActiveScreen((prev) => {
       const currentIndex = screens.indexOf(prev);
-      return currentIndex < screens.length - 1 ? screens[currentIndex + 1] : prev;
+      return currentIndex < screens.length - 1
+        ? screens[currentIndex + 1]
+        : prev;
     });
   }, [screens]);
 
   const switchToPrev = useCallback(() => {
-    Keyboard.dismiss();
+    hideKeyboard();
     setActiveScreen((prev) => {
       const currentIndex = screens.indexOf(prev);
       return currentIndex > 0 ? screens[currentIndex - 1] : prev;
@@ -45,6 +72,9 @@ export default function Index() {
             Math.abs(gestureState.dx) > Math.abs(gestureState.dy) &&
             Math.abs(gestureState.dx) > 20
           );
+        },
+        onPanResponderGrant: () => {
+          hideKeyboard();
         },
         onPanResponderRelease: (
           _: GestureResponderEvent,
@@ -64,7 +94,7 @@ export default function Index() {
     async function prepare() {
       try {
         // Add any initialization logic here if needed
-        await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to ensure proper initialization
+        await new Promise((resolve) => setTimeout(resolve, 100)); // Small delay to ensure proper initialization
       } catch (e) {
         console.warn(e);
         setError(e as Error);
@@ -78,16 +108,16 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state !== 'active') {
-        Keyboard.dismiss();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state !== "active") {
+        hideKeyboard();
       }
     });
     return () => subscription.remove();
   }, []);
 
   useEffect(() => {
-    Keyboard.dismiss();
+    hideKeyboard();
   }, [activeScreen]);
 
   if (!isReady) {
@@ -105,19 +135,58 @@ export default function Index() {
   return (
     <SafeAreaView style={styles.container} {...panResponder.panHandlers}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => { Keyboard.dismiss(); setActiveScreen('shoppingList'); }}>
-          <Text style={activeScreen === 'shoppingList' ? styles.activeHeaderText : styles.inactiveHeaderText}>Shopping List</Text>
+        <TouchableOpacity
+          onPressIn={hideKeyboard}
+          onPress={() => setActiveScreen("shoppingList")}
+        >
+          <Text
+            style={
+              activeScreen === "shoppingList"
+                ? styles.activeHeaderText
+                : styles.inactiveHeaderText
+            }
+          >
+            Shopping List
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => { Keyboard.dismiss(); setActiveScreen('wishlist'); }}>
-          <Text style={activeScreen === 'wishlist' ? styles.activeHeaderText : styles.inactiveHeaderText}>Wishlist</Text>
+        <TouchableOpacity
+          onPressIn={hideKeyboard}
+          onPress={() => setActiveScreen("wishlist")}
+        >
+          <Text
+            style={
+              activeScreen === "wishlist"
+                ? styles.activeHeaderText
+                : styles.inactiveHeaderText
+            }
+          >
+            Wishlist
+          </Text>
         </TouchableOpacity>
         {LLM_CHAT_ENABLED && (
-          <TouchableOpacity onPress={() => { Keyboard.dismiss(); setActiveScreen('llmChat'); }}>
-            <Text style={activeScreen === 'llmChat' ? styles.activeHeaderText : styles.inactiveHeaderText}>LLM Chat</Text>
+          <TouchableOpacity
+            onPressIn={hideKeyboard}
+            onPress={() => setActiveScreen("llmChat")}
+          >
+            <Text
+              style={
+                activeScreen === "llmChat"
+                  ? styles.activeHeaderText
+                  : styles.inactiveHeaderText
+              }
+            >
+              LLM Chat
+            </Text>
           </TouchableOpacity>
         )}
       </View>
-      {activeScreen === 'shoppingList' ? <ShoppingList /> : activeScreen === 'wishlist' ? <Wishlist /> : LLM_CHAT_ENABLED ? <LLMChat /> : null}
+      {activeScreen === "shoppingList" ? (
+        <ShoppingList />
+      ) : activeScreen === "wishlist" ? (
+        <Wishlist />
+      ) : LLM_CHAT_ENABLED ? (
+        <LLMChat />
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -125,26 +194,26 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    backgroundColor: "#1a1a1a",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   errorText: {
-    color: 'white',
-    textAlign: 'center',
+    color: "white",
+    textAlign: "center",
     margin: 20,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     padding: 10,
   },
   activeHeaderText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: "white",
+    fontWeight: "bold",
     fontSize: 18,
   },
   inactiveHeaderText: {
-    color: '#aaa',
+    color: "#aaa",
     fontSize: 18,
   },
 });
