@@ -55,27 +55,59 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
   const rainbowAnim = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
 
-  const isSemanticMatch = async (a: string, b: string) => {
+  const updateWishlistWithAI = async (
+    wishlist: Item[],
+    newItems: Item[]
+  ): Promise<Item[]> => {
     try {
       const genAI = new GoogleGenAI({ apiKey: API_KEY });
+      const prompt =
+        'You will receive a JSON array called WISHLIST and another array NEW_ITEMS. ' +
+        'For every entry in NEW_ITEMS, if a semantically equivalent product exists in WISHLIST, ' +
+        'set that wishlist entry\'s "visible" field to false. Do not change any other fields, ' +
+        'do not remove or add elements, and keep the same ordering. Return ONLY the updated WISHLIST JSON.';
+
+      const userText =
+        `${prompt}\nWISHLIST:\n${JSON.stringify(wishlist)}\nNEW_ITEMS:\n${JSON.stringify(
+          newItems
+        )}`;
+
       const result = await genAI.models.generateContent({
         model: selectedModel,
         contents: [
           {
             role: 'user',
-            parts: [
-              {
-                text: `Do these phrases refer to the same shopping item? "${a}" vs "${b}". Reply YES or NO.`,
-              },
-            ],
+            parts: [{ text: userText }],
           },
         ],
         config: { thinkingConfig: { thinkingBudget: 0 } },
       });
-      return result.text?.trim().toLowerCase().startsWith('yes') ?? false;
+
+      const clean = result.text?.replace(/```json\n?|```/g, '').trim() || '';
+      const parsed = JSON.parse(clean);
+      if (!Array.isArray(parsed)) throw new Error('invalid output');
+
+      const visibilityMap = new Map(parsed.map((p: any) => [p.id, p.visible]));
+      return wishlist.map((w) => {
+        const vis = visibilityMap.get(w.id);
+        return typeof vis === 'boolean' ? { ...w, visible: vis } : w;
+      });
     } catch (err) {
-      console.error('Error comparing items', err);
-      return false;
+      console.error('Error updating wishlist via AI', err);
+      return wishlist;
+    }
+  };
+
+  const applyWishlistAutoHide = async (newItems: Item[]) => {
+    if (!autoHideWishlistOnAdd) return;
+    try {
+      const wishlistData = await AsyncStorage.getItem(WISHLIST_KEY);
+      if (!wishlistData) return;
+      const wishlist: Item[] = JSON.parse(wishlistData);
+      const updated = await updateWishlistWithAI(wishlist, newItems);
+      await AsyncStorage.setItem(WISHLIST_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to update wishlist', e);
     }
   };
 
@@ -264,28 +296,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
           console.log("Adding new items:", newItems);
           setItems((prevItems) => [...newItems, ...prevItems]);
 
-          if (autoHideWishlistOnAdd) {
-            try {
-              const wishlistData = await AsyncStorage.getItem(WISHLIST_KEY);
-              if (wishlistData) {
-                const wishlist: Item[] = JSON.parse(wishlistData);
-                const updated = await Promise.all(
-                  wishlist.map(async (w) => {
-                    if (!w.visible) return w;
-                    for (const ni of newItems) {
-                      if (await isSemanticMatch(w.product, ni.product)) {
-                        return { ...w, visible: false };
-                      }
-                    }
-                    return w;
-                  })
-                );
-                await AsyncStorage.setItem(WISHLIST_KEY, JSON.stringify(updated));
-              }
-            } catch (e) {
-              console.error('Failed to update wishlist', e);
-            }
-          }
+          await applyWishlistAutoHide(newItems);
 
           newItems.forEach((item) => {
             Animated.timing(item.fadeAnim!, {
@@ -356,26 +367,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
 
     setItems((prevItems) => [newItem, ...prevItems]);
 
-    if (autoHideWishlistOnAdd) {
-      try {
-        const wishlistData = await AsyncStorage.getItem(WISHLIST_KEY);
-        if (wishlistData) {
-          const wishlist: Item[] = JSON.parse(wishlistData);
-          const updated = await Promise.all(
-            wishlist.map(async (w) => {
-              if (!w.visible) return w;
-              if (await isSemanticMatch(w.product, newItem.product)) {
-                return { ...w, visible: false };
-              }
-              return w;
-            })
-          );
-          await AsyncStorage.setItem(WISHLIST_KEY, JSON.stringify(updated));
-        }
-      } catch (e) {
-        console.error('Failed to update wishlist', e);
-      }
-    }
+    await applyWishlistAutoHide([newItem]);
     setProduct("");
     setPrice("");
     setQuantity("1");
