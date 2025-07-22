@@ -55,6 +55,30 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
   const rainbowAnim = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
 
+  const isSemanticMatch = async (a: string, b: string) => {
+    try {
+      const genAI = new GoogleGenAI({ apiKey: API_KEY });
+      const result = await genAI.models.generateContent({
+        model: selectedModel,
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                text: `Do these phrases refer to the same shopping item? "${a}" vs "${b}". Reply YES or NO.`,
+              },
+            ],
+          },
+        ],
+        config: { thinkingConfig: { thinkingBudget: 0 } },
+      });
+      return result.text?.trim().toLowerCase().startsWith('yes') ?? false;
+    } catch (err) {
+      console.error('Error comparing items', err);
+      return false;
+    }
+  };
+
   useEffect(() => {
     const onBackPress = () => {
       if (isFormVisible) {
@@ -245,14 +269,17 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
               const wishlistData = await AsyncStorage.getItem(WISHLIST_KEY);
               if (wishlistData) {
                 const wishlist: Item[] = JSON.parse(wishlistData);
-                const updated = wishlist.map((w) => {
-                  const match = newItems.some(
-                    (ni) =>
-                      ni.product.trim().toLowerCase() ===
-                      w.product.trim().toLowerCase()
-                  );
-                  return match ? { ...w, visible: false } : w;
-                });
+                const updated = await Promise.all(
+                  wishlist.map(async (w) => {
+                    if (!w.visible) return w;
+                    for (const ni of newItems) {
+                      if (await isSemanticMatch(w.product, ni.product)) {
+                        return { ...w, visible: false };
+                      }
+                    }
+                    return w;
+                  })
+                );
                 await AsyncStorage.setItem(WISHLIST_KEY, JSON.stringify(updated));
               }
             } catch (e) {
@@ -334,10 +361,14 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
         const wishlistData = await AsyncStorage.getItem(WISHLIST_KEY);
         if (wishlistData) {
           const wishlist: Item[] = JSON.parse(wishlistData);
-          const updated = wishlist.map((w) =>
-            w.product.trim().toLowerCase() === newItem.product.trim().toLowerCase()
-              ? { ...w, visible: false }
-              : w
+          const updated = await Promise.all(
+            wishlist.map(async (w) => {
+              if (!w.visible) return w;
+              if (await isSemanticMatch(w.product, newItem.product)) {
+                return { ...w, visible: false };
+              }
+              return w;
+            })
           );
           await AsyncStorage.setItem(WISHLIST_KEY, JSON.stringify(updated));
         }
