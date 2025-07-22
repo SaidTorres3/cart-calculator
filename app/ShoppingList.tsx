@@ -32,12 +32,17 @@ interface Item {
 }
 
 const STORAGE_KEY = "SHOPPING_ITEMS";
+const WISHLIST_KEY = "WISHLIST_ITEMS";
 
 interface ShoppingListProps {
   selectedModel: string;
+  autoHideWishlistOnAdd: boolean;
 }
 
-const ShoppingList: React.FC<ShoppingListProps> = ({ selectedModel }) => {
+const ShoppingList: React.FC<ShoppingListProps> = ({
+  selectedModel,
+  autoHideWishlistOnAdd,
+}) => {
   const [items, setItems] = useState<Item[]>([]);
   const [product, setProduct] = useState("");
   const [price, setPrice] = useState("");
@@ -235,6 +240,26 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ selectedModel }) => {
           console.log("Adding new items:", newItems);
           setItems((prevItems) => [...newItems, ...prevItems]);
 
+          if (autoHideWishlistOnAdd) {
+            try {
+              const wishlistData = await AsyncStorage.getItem(WISHLIST_KEY);
+              if (wishlistData) {
+                const wishlist: Item[] = JSON.parse(wishlistData);
+                const updated = wishlist.map((w) => {
+                  const match = newItems.some(
+                    (ni) =>
+                      ni.product.trim().toLowerCase() ===
+                      w.product.trim().toLowerCase()
+                  );
+                  return match ? { ...w, visible: false } : w;
+                });
+                await AsyncStorage.setItem(WISHLIST_KEY, JSON.stringify(updated));
+              }
+            } catch (e) {
+              console.error('Failed to update wishlist', e);
+            }
+          }
+
           newItems.forEach((item) => {
             Animated.timing(item.fadeAnim!, {
               toValue: 1,
@@ -287,7 +312,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ selectedModel }) => {
     }
   }, [editingId]);
 
-  const addItem = () => {
+  const addItem = async () => {
     if (product.trim() === "") return;
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -303,6 +328,23 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ selectedModel }) => {
     };
 
     setItems((prevItems) => [newItem, ...prevItems]);
+
+    if (autoHideWishlistOnAdd) {
+      try {
+        const wishlistData = await AsyncStorage.getItem(WISHLIST_KEY);
+        if (wishlistData) {
+          const wishlist: Item[] = JSON.parse(wishlistData);
+          const updated = wishlist.map((w) =>
+            w.product.trim().toLowerCase() === newItem.product.trim().toLowerCase()
+              ? { ...w, visible: false }
+              : w
+          );
+          await AsyncStorage.setItem(WISHLIST_KEY, JSON.stringify(updated));
+        }
+      } catch (e) {
+        console.error('Failed to update wishlist', e);
+      }
+    }
     setProduct("");
     setPrice("");
     setQuantity("1");
