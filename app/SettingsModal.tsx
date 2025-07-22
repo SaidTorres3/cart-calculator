@@ -1,39 +1,44 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet, Switch } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-interface ModelSelectorProps {
+interface SettingsModalProps {
   visible: boolean;
   onClose: () => void;
   selectedModel: string;
-  onSelect: (model: string) => void;
+  onSelectModel: (model: string) => void;
+  autoHideWishlistOnAdd: boolean;
+  onToggleAutoHide: () => void;
 }
 
 const MODELS = [
-  { label: "Gemini 2.5 Flash", value: "gemini-2.5-flash" },
-  { label: "Gemini 2.5 Flash Lite", value: "gemini-2.5-flash-lite" },
-  { label: "Gemini 2.0 Flash", value: "gemini-2.0-flash" },
-  { label: "Gemini 2.0 Flash Lite", value: "gemini-2.0-flash-lite" },
-  { label: "Gemma 3 12B", value: "gemma-3-12b-it" },
-  { label: "Gemma 3 27B", value: "gemma-3-27b-it" },
+  { label: 'Gemini 2.5 Flash', value: 'gemini-2.5-flash' },
+  { label: 'Gemini 2.5 Flash Lite', value: 'gemini-2.5-flash-lite' },
+  { label: 'Gemini 2.0 Flash', value: 'gemini-2.0-flash' },
+  { label: 'Gemini 2.0 Flash Lite', value: 'gemini-2.0-flash-lite' },
+  { label: 'Gemma 3 12B', value: 'gemma-3-12b-it' },
+  { label: 'Gemma 3 27B', value: 'gemma-3-27b-it' },
 ];
 
-const ModelSelector: React.FC<ModelSelectorProps> = ({
+const SettingsModal: React.FC<SettingsModalProps> = ({
   visible,
   onClose,
   selectedModel,
-  onSelect,
+  onSelectModel,
+  autoHideWishlistOnAdd,
+  onToggleAutoHide,
 }) => {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.container}>
-          <Text style={styles.title}>Select AI Model</Text>
+          <Text style={styles.title}>Settings</Text>
+          <Text style={styles.sectionTitle}>Select AI Model</Text>
           {MODELS.map((m) => (
             <TouchableOpacity
               key={m.value}
               style={[styles.option, selectedModel === m.value && styles.selectedOption]}
-              onPress={() => onSelect(m.value)}
+              onPress={() => onSelectModel(m.value)}
             >
               <Text style={styles.optionText}>{m.label}</Text>
               {selectedModel === m.value && (
@@ -41,6 +46,13 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
               )}
             </TouchableOpacity>
           ))}
+          <View style={styles.toggleRow}>
+            <Text style={styles.optionText}>Auto-hide wishlisted on add</Text>
+            <Switch
+              value={autoHideWishlistOnAdd}
+              onValueChange={onToggleAutoHide}
+            />
+          </View>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Text style={styles.closeText}>Close</Text>
           </TouchableOpacity>
@@ -70,6 +82,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: 'center',
   },
+  sectionTitle: {
+    color: '#fff',
+    fontWeight: 'bold',
+    marginTop: 10,
+    marginBottom: 6,
+  },
   option: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -85,6 +103,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
   },
+  toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+  },
   closeButton: {
     marginTop: 10,
     backgroundColor: '#1976D2',
@@ -98,4 +123,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ModelSelector;
+export default SettingsModal;

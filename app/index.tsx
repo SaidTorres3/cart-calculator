@@ -19,7 +19,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import * as SplashScreen from "expo-splash-screen";
 import { MaterialIcons } from "@expo/vector-icons";
 import LLMChat from "./LLMChat";
-import ModelSelector from "./ModelSelector";
+import SettingsModal from "./SettingsModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LLM_CHAT_ENABLED } from "../config";
 
@@ -34,6 +34,7 @@ export default function Index() {
   >("shoppingList");
   const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-lite");
   const [configVisible, setConfigVisible] = useState(false);
+  const [autoHideWishlistOnAdd, setAutoHideWishlistOnAdd] = useState(true);
 
   const hideKeyboard = () => {
     Keyboard.dismiss();
@@ -68,6 +69,12 @@ export default function Index() {
   const handleSelectModel = async (model: string) => {
     setSelectedModel(model);
     await AsyncStorage.setItem('SELECTED_MODEL', model);
+  };
+
+  const toggleAutoHide = async () => {
+    const newValue = !autoHideWishlistOnAdd;
+    setAutoHideWishlistOnAdd(newValue);
+    await AsyncStorage.setItem('AUTO_HIDE_WISHLIST_ON_ADD', newValue.toString());
   };
 
   const panResponder = useMemo(
@@ -130,6 +137,10 @@ export default function Index() {
       const stored = await AsyncStorage.getItem('SELECTED_MODEL');
       if (stored) {
         setSelectedModel(stored);
+      }
+      const hideSetting = await AsyncStorage.getItem('AUTO_HIDE_WISHLIST_ON_ADD');
+      if (hideSetting !== null) {
+        setAutoHideWishlistOnAdd(hideSetting === 'true');
       }
     })();
   }, []);
@@ -205,17 +216,22 @@ export default function Index() {
         </TouchableOpacity>
       </View>
       {activeScreen === "shoppingList" ? (
-        <ShoppingList selectedModel={selectedModel} />
+        <ShoppingList
+          selectedModel={selectedModel}
+          autoHideWishlistOnAdd={autoHideWishlistOnAdd}
+        />
       ) : activeScreen === "wishlist" ? (
         <Wishlist selectedModel={selectedModel} />
       ) : LLM_CHAT_ENABLED ? (
         <LLMChat selectedModel={selectedModel} />
       ) : null}
-      <ModelSelector
+      <SettingsModal
         visible={configVisible}
         onClose={() => setConfigVisible(false)}
         selectedModel={selectedModel}
-        onSelect={handleSelectModel}
+        onSelectModel={handleSelectModel}
+        autoHideWishlistOnAdd={autoHideWishlistOnAdd}
+        onToggleAutoHide={toggleAutoHide}
       />
     </SafeAreaView>
   );

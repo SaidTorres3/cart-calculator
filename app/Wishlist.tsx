@@ -19,6 +19,7 @@ import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_KEY } from "../config";
 import { GoogleGenAI } from "@google/genai";
+import { supportsThinkingConfig } from "./aiUtils";
 
 interface Item {
   id: string;
@@ -140,7 +141,7 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel }) => {
 
         const genAI = new GoogleGenAI({ apiKey: API_KEY });
 
-        const result = await genAI.models.generateContent({
+        const aiParams: any = {
           model: selectedModel,
           contents: [
             {
@@ -167,12 +168,11 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel }) => {
               ],
             },
           ],
-          config: {
-            thinkingConfig: {
-              thinkingBudget: 0,
-            }
-          }
-        });
+        };
+        if (supportsThinkingConfig(selectedModel)) {
+          aiParams.config = { thinkingConfig: { thinkingBudget: 0 } };
+        }
+        const result = await genAI.models.generateContent(aiParams);
 
         const completionData = result.text;
 

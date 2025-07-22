@@ -20,6 +20,7 @@ import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_KEY } from "../config";
 import { GoogleGenAI } from "@google/genai";
+import { supportsThinkingConfig } from "./aiUtils";
 
 interface Item {
   id: string;
@@ -32,12 +33,17 @@ interface Item {
 }
 
 const STORAGE_KEY = "SHOPPING_ITEMS";
+const WISHLIST_KEY = "WISHLIST_ITEMS";
 
 interface ShoppingListProps {
   selectedModel: string;
+  autoHideWishlistOnAdd: boolean;
 }
 
-const ShoppingList: React.FC<ShoppingListProps> = ({ selectedModel }) => {
+const ShoppingList: React.FC<ShoppingListProps> = ({
+  selectedModel,
+  autoHideWishlistOnAdd,
+}) => {
   const [items, setItems] = useState<Item[]>([]);
   const [product, setProduct] = useState("");
   const [price, setPrice] = useState("");
@@ -49,6 +55,65 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ selectedModel }) => {
   const [formHeight, setFormHeight] = useState(0);
   const rainbowAnim = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
+
+  const updateWishlistWithAI = async (
+    wishlist: Item[],
+    newItems: Item[]
+  ): Promise<Item[]> => {
+    try {
+      const genAI = new GoogleGenAI({ apiKey: API_KEY });
+      const prompt =
+        'You will receive a JSON array called WISHLIST and another array NEW_ITEMS. ' +
+        'For every entry in NEW_ITEMS, if a semantically equivalent product exists in WISHLIST, ' +
+        'set that wishlist entry\'s "visible" field to false. Do not change any other fields, ' +
+        'do not remove or add elements, and keep the same ordering. Return ONLY the updated WISHLIST JSON.';
+
+      const userText =
+        `${prompt}\nWISHLIST:\n${JSON.stringify(wishlist)}\nNEW_ITEMS:\n${JSON.stringify(
+          newItems
+        )}`;
+
+      const aiParams: any = {
+        model: selectedModel,
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: userText }],
+          },
+        ],
+      };
+      if (supportsThinkingConfig(selectedModel)) {
+        aiParams.config = { thinkingConfig: { thinkingBudget: 0 } };
+      }
+      const result = await genAI.models.generateContent(aiParams);
+
+      const clean = result.text?.replace(/```json\n?|```/g, '').trim() || '';
+      const parsed = JSON.parse(clean);
+      if (!Array.isArray(parsed)) throw new Error('invalid output');
+
+      const visibilityMap = new Map(parsed.map((p: any) => [p.id, p.visible]));
+      return wishlist.map((w) => {
+        const vis = visibilityMap.get(w.id);
+        return typeof vis === 'boolean' ? { ...w, visible: vis } : w;
+      });
+    } catch (err) {
+      console.error('Error updating wishlist via AI', err);
+      return wishlist;
+    }
+  };
+
+  const applyWishlistAutoHide = async (newItems: Item[]) => {
+    if (!autoHideWishlistOnAdd) return;
+    try {
+      const wishlistData = await AsyncStorage.getItem(WISHLIST_KEY);
+      if (!wishlistData) return;
+      const wishlist: Item[] = JSON.parse(wishlistData);
+      const updated = await updateWishlistWithAI(wishlist, newItems);
+      await AsyncStorage.setItem(WISHLIST_KEY, JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to update wishlist', e);
+    }
+  };
 
   useEffect(() => {
     const onBackPress = () => {
@@ -164,7 +229,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ selectedModel }) => {
         });
         const genAI = new GoogleGenAI({ apiKey: API_KEY });
 
-        const result = await genAI.models.generateContent({
+        const aiParams: any = {
           model: selectedModel,
           contents: [
             {
@@ -197,12 +262,11 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ selectedModel }) => {
               ],
             },
           ],
-          config: {
-            thinkingConfig: {
-              thinkingBudget: 0,
-            },
-          },
-        });
+        };
+        if (supportsThinkingConfig(selectedModel)) {
+          aiParams.config = { thinkingConfig: { thinkingBudget: 0 } };
+        }
+        const result = await genAI.models.generateContent(aiParams);
 
         const completionData = result.text;
 
@@ -234,6 +298,8 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ selectedModel }) => {
 
           console.log("Adding new items:", newItems);
           setItems((prevItems) => [...newItems, ...prevItems]);
+
+          await applyWishlistAutoHide(newItems);
 
           newItems.forEach((item) => {
             Animated.timing(item.fadeAnim!, {
@@ -287,7 +353,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ selectedModel }) => {
     }
   }, [editingId]);
 
-  const addItem = () => {
+  const addItem = async () => {
     if (product.trim() === "") return;
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -303,6 +369,8 @@ const ShoppingList: React.FC<ShoppingListProps> = ({ selectedModel }) => {
     };
 
     setItems((prevItems) => [newItem, ...prevItems]);
+
+    await applyWishlistAutoHide([newItem]);
     setProduct("");
     setPrice("");
     setQuantity("1");
