@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet, Switch } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet, Switch, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 interface SettingsModalProps {
@@ -9,6 +9,8 @@ interface SettingsModalProps {
   onSelectModel: (model: string) => void;
   autoHideWishlistOnAdd: boolean;
   onToggleAutoHide: () => void;
+  onClearApiKey: () => void;
+  onAddApiKey: () => void;
 }
 
 const MODELS = [
@@ -27,7 +29,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   onSelectModel,
   autoHideWishlistOnAdd,
   onToggleAutoHide,
+  onClearApiKey,
+  onAddApiKey,
 }) => {
+  const confirmRemove = () => {
+    Alert.alert('Remove Gemini API Key?', 'You can add it again later.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: onClearApiKey },
+    ]);
+  };
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -53,6 +63,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               onValueChange={onToggleAutoHide}
             />
           </View>
+          <TouchableOpacity
+            style={styles.addKeyButton}
+            onPress={onAddApiKey}
+          >
+            <Text style={styles.addKeyText}>Set Gemini API Key</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.removeKeyButton}
+            onPress={confirmRemove}
+          >
+            <Text style={styles.removeKeyText}>Remove Gemini API Key</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <Text style={styles.closeText}>Close</Text>
           </TouchableOpacity>
@@ -109,6 +131,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     paddingHorizontal: 10,
+  },
+  addKeyButton: {
+    backgroundColor: '#1976D2',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  addKeyText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  removeKeyButton: {
+    backgroundColor: '#551111',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  removeKeyText: {
+    color: '#fff',
+    fontSize: 16,
   },
   closeButton: {
     marginTop: 10,

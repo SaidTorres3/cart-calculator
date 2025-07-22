@@ -17,7 +17,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_KEY } from "../config";
+import { getApiKey } from "../config";
 import { GoogleGenAI } from "@google/genai";
 import { supportsThinkingConfig } from "./aiUtils";
 
@@ -32,9 +32,10 @@ const STORAGE_KEY = "WISHLIST_ITEMS";
 
 interface WishlistProps {
   selectedModel: string;
+  onRequireApiKey: () => void;
 }
 
-const Wishlist: React.FC<WishlistProps> = ({ selectedModel }) => {
+const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) => {
   const [items, setItems] = useState<Item[]>([]);
   const [product, setProduct] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -138,8 +139,11 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel }) => {
         const base64Audio = await FileSystem.readAsStringAsync(uri, {
           encoding: FileSystem.EncodingType.Base64,
         });
-
-        const genAI = new GoogleGenAI({ apiKey: API_KEY });
+        if (!getApiKey()) {
+          onRequireApiKey();
+          return;
+        }
+        const genAI = new GoogleGenAI({ apiKey: getApiKey() });
 
         const aiParams: any = {
           model: selectedModel,

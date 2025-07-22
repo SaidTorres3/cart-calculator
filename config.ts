@@ -1,14 +1,28 @@
 // config.ts
 
-const ENV_GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const ENV_GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
 const LLM_CHAT_ENABLED_ENV = process.env.EXPO_PUBLIC_LLM_CHAT_ENABLED;
 
-if (!ENV_GEMINI_API_KEY) {
-  throw new Error('EXPO_PUBLIC_GEMINI_API_KEY is not defined in .env file');
-}
+let apiKey = ENV_GEMINI_API_KEY;
+
+export const getApiKey = () => apiKey;
+export const setApiKey = (key: string) => {
+  apiKey = key;
+};
+export const clearApiKey = () => {
+  apiKey = '';
+};
+
+export const initApiKey = async () => {
+  const stored = await AsyncStorage.getItem('GEMINI_API_KEY');
+  if (stored) {
+    apiKey = stored;
+  }
+};
 
 // Export all constants
-export const API_KEY = ENV_GEMINI_API_KEY;
 export const GEMINI_UPLOAD_API_URL = 'https://api.google.com/gemini/v2/upload'; // Replace with actual Gemini upload URL
 export const GEMINI_GENERATE_CONTENT_API_URL = 'https://api.google.com/gemini/v2/generateContent'; // Replace with actual Gemini generateContent URL
 

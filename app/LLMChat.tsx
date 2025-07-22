@@ -7,15 +7,16 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
-import { API_KEY } from "../config";
+import { getApiKey } from "../config";
 import { GoogleGenAI } from "@google/genai";
 import { supportsThinkingConfig } from "./aiUtils";
 
 interface LLMChatProps {
   selectedModel: string;
+  onRequireApiKey: () => void;
 }
 
-const LLMChat: React.FC<LLMChatProps> = ({ selectedModel }) => {
+const LLMChat: React.FC<LLMChatProps> = ({ selectedModel, onRequireApiKey }) => {
   const [messages, setMessages] = useState<
     { role: "user" | "assistant"; content: string }[]
   >([]);
@@ -34,7 +35,11 @@ const LLMChat: React.FC<LLMChatProps> = ({ selectedModel }) => {
     setLoading(true);
 
     try {
-      const genAI = new GoogleGenAI({ apiKey: API_KEY });
+      if (!getApiKey()) {
+        onRequireApiKey();
+        return;
+      }
+      const genAI = new GoogleGenAI({ apiKey: getApiKey() });
 
       const aiParams: any = {
         model: selectedModel,

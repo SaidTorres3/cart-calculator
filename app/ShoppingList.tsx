@@ -18,7 +18,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_KEY } from "../config";
+import { getApiKey } from "../config";
 import { GoogleGenAI } from "@google/genai";
 import { supportsThinkingConfig } from "./aiUtils";
 
@@ -38,11 +38,13 @@ const WISHLIST_KEY = "WISHLIST_ITEMS";
 interface ShoppingListProps {
   selectedModel: string;
   autoHideWishlistOnAdd: boolean;
+  onRequireApiKey: () => void;
 }
 
 const ShoppingList: React.FC<ShoppingListProps> = ({
   selectedModel,
   autoHideWishlistOnAdd,
+  onRequireApiKey,
 }) => {
   const [items, setItems] = useState<Item[]>([]);
   const [product, setProduct] = useState("");
@@ -60,8 +62,12 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
     wishlist: Item[],
     newItems: Item[]
   ): Promise<Item[]> => {
+    if (!getApiKey()) {
+      onRequireApiKey();
+      return wishlist;
+    }
     try {
-      const genAI = new GoogleGenAI({ apiKey: API_KEY });
+      const genAI = new GoogleGenAI({ apiKey: getApiKey() });
       const prompt =
         'You will receive a JSON array called WISHLIST and another array NEW_ITEMS. ' +
         'For every entry in NEW_ITEMS, if a semantically equivalent product exists in WISHLIST, ' +
@@ -227,7 +233,11 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
         const base64Audio = await FileSystem.readAsStringAsync(uri, {
           encoding: FileSystem.EncodingType.Base64,
         });
-        const genAI = new GoogleGenAI({ apiKey: API_KEY });
+        if (!getApiKey()) {
+          onRequireApiKey();
+          return;
+        }
+        const genAI = new GoogleGenAI({ apiKey: getApiKey() });
 
         const aiParams: any = {
           model: selectedModel,
