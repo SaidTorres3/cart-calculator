@@ -14,7 +14,7 @@ The shopping list integrates with Google Gemini via the `@google/genai` SDK. You
 - Choose between different AI models via the new configuration menu.
 - Local data stored with `AsyncStorage` so your lists persist between sessions.
 - Optional **LLM Chat** screen for talking to the model.
-- Remove the stored Gemini API key from the settings screen.
+- Prompt for a Gemini API key on first launch and set or remove it from the settings screen.
 - Works on Android, iOS and the web through Expo.
 
 ## Setup
@@ -33,7 +33,7 @@ The shopping list integrates with Google Gemini via the `@google/genai` SDK. You
    ```bash
    npx expo start
    ```
-5. Use the settings button in the app header to choose between the available AI models or clear the stored API key.
+5. Use the settings button in the app header to choose between the available AI models or manage the stored API key.
 
 ## Running tests
 

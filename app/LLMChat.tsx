@@ -13,9 +13,10 @@ import { supportsThinkingConfig } from "./aiUtils";
 
 interface LLMChatProps {
   selectedModel: string;
+  onRequireApiKey: () => void;
 }
 
-const LLMChat: React.FC<LLMChatProps> = ({ selectedModel }) => {
+const LLMChat: React.FC<LLMChatProps> = ({ selectedModel, onRequireApiKey }) => {
   const [messages, setMessages] = useState<
     { role: "user" | "assistant"; content: string }[]
   >([]);
@@ -34,6 +35,10 @@ const LLMChat: React.FC<LLMChatProps> = ({ selectedModel }) => {
     setLoading(true);
 
     try {
+      if (!getApiKey()) {
+        onRequireApiKey();
+        return;
+      }
       const genAI = new GoogleGenAI({ apiKey: getApiKey() });
 
       const aiParams: any = {

@@ -32,9 +32,10 @@ const STORAGE_KEY = "WISHLIST_ITEMS";
 
 interface WishlistProps {
   selectedModel: string;
+  onRequireApiKey: () => void;
 }
 
-const Wishlist: React.FC<WishlistProps> = ({ selectedModel }) => {
+const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) => {
   const [items, setItems] = useState<Item[]>([]);
   const [product, setProduct] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -138,7 +139,10 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel }) => {
         const base64Audio = await FileSystem.readAsStringAsync(uri, {
           encoding: FileSystem.EncodingType.Base64,
         });
-
+        if (!getApiKey()) {
+          onRequireApiKey();
+          return;
+        }
         const genAI = new GoogleGenAI({ apiKey: getApiKey() });
 
         const aiParams: any = {

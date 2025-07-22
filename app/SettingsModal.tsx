@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet, Switch } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet, Switch, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 interface SettingsModalProps {
@@ -10,6 +10,7 @@ interface SettingsModalProps {
   autoHideWishlistOnAdd: boolean;
   onToggleAutoHide: () => void;
   onClearApiKey: () => void;
+  onAddApiKey: () => void;
 }
 
 const MODELS = [
@@ -29,7 +30,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   autoHideWishlistOnAdd,
   onToggleAutoHide,
   onClearApiKey,
+  onAddApiKey,
 }) => {
+  const confirmRemove = () => {
+    Alert.alert('Remove Gemini API Key?', 'You can add it again later.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: onClearApiKey },
+    ]);
+  };
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -56,8 +64,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             />
           </View>
           <TouchableOpacity
+            style={styles.addKeyButton}
+            onPress={onAddApiKey}
+          >
+            <Text style={styles.addKeyText}>Set Gemini API Key</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.removeKeyButton}
-            onPress={onClearApiKey}
+            onPress={confirmRemove}
           >
             <Text style={styles.removeKeyText}>Remove Gemini API Key</Text>
           </TouchableOpacity>
@@ -118,8 +132,19 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 10,
   },
+  addKeyButton: {
+    backgroundColor: '#1976D2',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  addKeyText: {
+    color: '#fff',
+    fontSize: 16,
+  },
   removeKeyButton: {
-    backgroundColor: '#C62828',
+    backgroundColor: '#551111',
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',

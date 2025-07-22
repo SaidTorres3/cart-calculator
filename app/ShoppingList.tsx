@@ -38,11 +38,13 @@ const WISHLIST_KEY = "WISHLIST_ITEMS";
 interface ShoppingListProps {
   selectedModel: string;
   autoHideWishlistOnAdd: boolean;
+  onRequireApiKey: () => void;
 }
 
 const ShoppingList: React.FC<ShoppingListProps> = ({
   selectedModel,
   autoHideWishlistOnAdd,
+  onRequireApiKey,
 }) => {
   const [items, setItems] = useState<Item[]>([]);
   const [product, setProduct] = useState("");
@@ -60,6 +62,10 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
     wishlist: Item[],
     newItems: Item[]
   ): Promise<Item[]> => {
+    if (!getApiKey()) {
+      onRequireApiKey();
+      return wishlist;
+    }
     try {
       const genAI = new GoogleGenAI({ apiKey: getApiKey() });
       const prompt =
@@ -227,6 +233,10 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
         const base64Audio = await FileSystem.readAsStringAsync(uri, {
           encoding: FileSystem.EncodingType.Base64,
         });
+        if (!getApiKey()) {
+          onRequireApiKey();
+          return;
+        }
         const genAI = new GoogleGenAI({ apiKey: getApiKey() });
 
         const aiParams: any = {

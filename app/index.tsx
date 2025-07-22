@@ -20,8 +20,9 @@ import * as SplashScreen from "expo-splash-screen";
 import { MaterialIcons } from "@expo/vector-icons";
 import LLMChat from "./LLMChat";
 import SettingsModal from "./SettingsModal";
+import ApiKeyModal from "./ApiKeyModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { LLM_CHAT_ENABLED, initApiKey, clearApiKey } from "../config";
+import { getApiKey, LLM_CHAT_ENABLED, initApiKey, clearApiKey, setApiKey } from "../config";
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -35,6 +36,8 @@ export default function Index() {
   const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-lite");
   const [configVisible, setConfigVisible] = useState(false);
   const [autoHideWishlistOnAdd, setAutoHideWishlistOnAdd] = useState(true);
+  const [apiKeyModalVisible, setApiKeyModalVisible] = useState(false);
+  const [apiKeyError, setApiKeyError] = useState(false);
 
   const hideKeyboard = () => {
     Keyboard.dismiss();
@@ -80,6 +83,19 @@ export default function Index() {
   const handleClearApiKey = async () => {
     await AsyncStorage.removeItem('GEMINI_API_KEY');
     clearApiKey();
+    setApiKeyModalVisible(true);
+  };
+
+  const handleSaveApiKey = async (key: string) => {
+    await AsyncStorage.setItem('GEMINI_API_KEY', key);
+    setApiKey(key);
+    setApiKeyError(false);
+    setApiKeyModalVisible(false);
+  };
+
+  const requireApiKey = () => {
+    setApiKeyError(true);
+    setApiKeyModalVisible(true);
   };
 
   const panResponder = useMemo(
@@ -116,6 +132,9 @@ export default function Index() {
       try {
         // Add any initialization logic here if needed
         await initApiKey();
+        if (!getApiKey()) {
+          setApiKeyModalVisible(true);
+        }
         await new Promise((resolve) => setTimeout(resolve, 100)); // Small delay to ensure proper initialization
       } catch (e) {
         console.warn(e);
@@ -225,11 +244,12 @@ export default function Index() {
         <ShoppingList
           selectedModel={selectedModel}
           autoHideWishlistOnAdd={autoHideWishlistOnAdd}
+          onRequireApiKey={requireApiKey}
         />
       ) : activeScreen === "wishlist" ? (
-        <Wishlist selectedModel={selectedModel} />
+        <Wishlist selectedModel={selectedModel} onRequireApiKey={requireApiKey} />
       ) : LLM_CHAT_ENABLED ? (
-        <LLMChat selectedModel={selectedModel} />
+        <LLMChat selectedModel={selectedModel} onRequireApiKey={requireApiKey} />
       ) : null}
       <SettingsModal
         visible={configVisible}
@@ -239,6 +259,16 @@ export default function Index() {
         autoHideWishlistOnAdd={autoHideWishlistOnAdd}
         onToggleAutoHide={toggleAutoHide}
         onClearApiKey={handleClearApiKey}
+        onAddApiKey={() => setApiKeyModalVisible(true)}
+      />
+      <ApiKeyModal
+        visible={apiKeyModalVisible}
+        onClose={() => {
+          setApiKeyError(false);
+          setApiKeyModalVisible(false);
+        }}
+        onSave={handleSaveApiKey}
+        showError={apiKeyError}
       />
     </SafeAreaView>
   );
