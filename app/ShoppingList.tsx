@@ -12,6 +12,7 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  BackHandler,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
@@ -44,6 +45,23 @@ const ShoppingList: React.FC = () => {
   const [formHeight, setFormHeight] = useState(0);
   const rainbowAnim = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    const onBackPress = () => {
+      if (isFormVisible) {
+        setIsFormVisible(false);
+        return true;
+      }
+      return false;
+    };
+
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      onBackPress
+    );
+
+    return () => subscription.remove();
+  }, [isFormVisible]);
 
   useEffect(() => {
     // Enable LayoutAnimation on Android
