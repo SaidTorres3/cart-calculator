@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { API_KEY } from "../config";
 import { GoogleGenAI } from "@google/genai";
+import { supportsThinkingConfig } from "./aiUtils";
 
 interface LLMChatProps {
   selectedModel: string;
@@ -35,7 +36,7 @@ const LLMChat: React.FC<LLMChatProps> = ({ selectedModel }) => {
     try {
       const genAI = new GoogleGenAI({ apiKey: API_KEY });
 
-      const result = await genAI.models.generateContent({
+      const aiParams: any = {
         model: selectedModel,
         contents: [
           ...messages.map((m) => ({
@@ -53,11 +54,12 @@ const LLMChat: React.FC<LLMChatProps> = ({ selectedModel }) => {
         ],
         config: {
           systemInstruction: `You are a helpful assistant that always responds at the end with a smiling emoji.`,
-          thinkingConfig: {
-            thinkingBudget: 0
-          }
         },
-      });
+      };
+      if (supportsThinkingConfig(selectedModel)) {
+        aiParams.config.thinkingConfig = { thinkingBudget: 0 };
+      }
+      const result = await genAI.models.generateContent(aiParams);
 
       const assistantMessage: { role: "assistant"; content: string } = {
         role: "assistant",

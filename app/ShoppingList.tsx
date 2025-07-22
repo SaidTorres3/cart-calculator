@@ -20,6 +20,7 @@ import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_KEY } from "../config";
 import { GoogleGenAI } from "@google/genai";
+import { supportsThinkingConfig } from "./aiUtils";
 
 interface Item {
   id: string;
@@ -72,7 +73,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
           newItems
         )}`;
 
-      const result = await genAI.models.generateContent({
+      const aiParams: any = {
         model: selectedModel,
         contents: [
           {
@@ -80,8 +81,11 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
             parts: [{ text: userText }],
           },
         ],
-        config: { thinkingConfig: { thinkingBudget: 0 } },
-      });
+      };
+      if (supportsThinkingConfig(selectedModel)) {
+        aiParams.config = { thinkingConfig: { thinkingBudget: 0 } };
+      }
+      const result = await genAI.models.generateContent(aiParams);
 
       const clean = result.text?.replace(/```json\n?|```/g, '').trim() || '';
       const parsed = JSON.parse(clean);
@@ -225,7 +229,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
         });
         const genAI = new GoogleGenAI({ apiKey: API_KEY });
 
-        const result = await genAI.models.generateContent({
+        const aiParams: any = {
           model: selectedModel,
           contents: [
             {
@@ -258,12 +262,11 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
               ],
             },
           ],
-          config: {
-            thinkingConfig: {
-              thinkingBudget: 0,
-            },
-          },
-        });
+        };
+        if (supportsThinkingConfig(selectedModel)) {
+          aiParams.config = { thinkingConfig: { thinkingBudget: 0 } };
+        }
+        const result = await genAI.models.generateContent(aiParams);
 
         const completionData = result.text;
 
