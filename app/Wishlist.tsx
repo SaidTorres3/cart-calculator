@@ -29,7 +29,11 @@ interface Item {
 
 const STORAGE_KEY = "WISHLIST_ITEMS";
 
-const Wishlist: React.FC = () => {
+interface WishlistProps {
+  selectedModel: string;
+}
+
+const Wishlist: React.FC<WishlistProps> = ({ selectedModel }) => {
   const [items, setItems] = useState<Item[]>([]);
   const [product, setProduct] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -137,7 +141,7 @@ const Wishlist: React.FC = () => {
         const genAI = new GoogleGenAI({ apiKey: API_KEY });
 
         const result = await genAI.models.generateContent({
-          model: "gemini-2.5-flash-lite-preview-06-17",
+          model: selectedModel,
           contents: [
             {
               role: "user",

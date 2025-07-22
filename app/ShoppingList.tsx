@@ -33,7 +33,11 @@ interface Item {
 
 const STORAGE_KEY = "SHOPPING_ITEMS";
 
-const ShoppingList: React.FC = () => {
+interface ShoppingListProps {
+  selectedModel: string;
+}
+
+const ShoppingList: React.FC<ShoppingListProps> = ({ selectedModel }) => {
   const [items, setItems] = useState<Item[]>([]);
   const [product, setProduct] = useState("");
   const [price, setPrice] = useState("");
@@ -161,7 +165,7 @@ const ShoppingList: React.FC = () => {
         const genAI = new GoogleGenAI({ apiKey: API_KEY });
 
         const result = await genAI.models.generateContent({
-          model: "gemini-2.5-flash-lite-preview-06-17",
+          model: selectedModel,
           contents: [
             {
               role: "user",
