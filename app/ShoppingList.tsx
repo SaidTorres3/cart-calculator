@@ -5,7 +5,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
   StyleSheet,
   Alert,
   Animated,
@@ -21,6 +20,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiKey } from "../config";
 import { GoogleGenAI } from "@google/genai";
 import { supportsThinkingConfig } from "./aiUtils";
+import DraggableFlatList, {
+  RenderItemParams,
+  ScaleDecorator,
+} from "react-native-draggable-flatlist";
 
 interface Item {
   id: string;
@@ -56,7 +59,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
   const [isFormVisible, setIsFormVisible] = useState(true);
   const [formHeight, setFormHeight] = useState(0);
   const rainbowAnim = useRef(new Animated.Value(0)).current;
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<any>(null);
 
   const updateWishlistWithAI = async (
     wishlist: Item[],
@@ -498,7 +501,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
     );
   };
 
-  const renderItem = ({ item }: { item: Item }) => {
+  const renderItem = ({ item, drag, isActive }: RenderItemParams<Item>) => {
     const isEditing = item.id === editingId;
     const borderColor = rainbowAnim
       .interpolate({
@@ -515,21 +518,22 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
       .toString();
 
     return (
-      <TouchableOpacity onPress={() => startEditing(item)} activeOpacity={0.7}>
-        <Animated.View
-          style={[
-            styles.item,
-            !item.visible && styles.hiddenItem,
-            item.priceUncertain && styles.uncertainItem,
-            isEditing && {
-              borderWidth: 2,
-              borderColor: borderColor,
-            },
-            { opacity: item.fadeAnim },
-          ]}
-        >
-          <View style={styles.itemInfo}>
-            <View style={styles.textContainer}>
+      <ScaleDecorator>
+        <TouchableOpacity onPress={() => startEditing(item)} activeOpacity={0.7}>
+          <Animated.View
+            style={[
+              styles.item,
+              !item.visible && styles.hiddenItem,
+              item.priceUncertain && styles.uncertainItem,
+              isEditing && {
+                borderWidth: 2,
+                borderColor: borderColor,
+              },
+              { opacity: item.fadeAnim },
+            ]}
+          >
+            <View style={styles.itemInfo}>
+              <View style={styles.textContainer}>
               <Text
                 style={[styles.itemText, !item.visible && styles.hiddenText]}
                 numberOfLines={2}
@@ -573,6 +577,13 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
           </View>
           <View style={styles.buttonContainer}>
             <TouchableOpacity
+              style={[styles.actionButton, styles.dragButton]}
+              onLongPress={drag}
+              disabled={isActive}
+            >
+              <MaterialIcons name="drag-handle" size={20} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity
               style={[styles.actionButton, styles.visibilityButton]}
               onPress={(e) => {
                 e.stopPropagation();
@@ -610,6 +621,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
           </View>
         </Animated.View>
       </TouchableOpacity>
+    </ScaleDecorator>
     );
   };
 
@@ -638,7 +650,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
         </View>
       </TouchableOpacity>
 
-      <FlatList
+      <DraggableFlatList
         ref={flatListRef}
         data={items}
         renderItem={renderItem}
@@ -649,6 +661,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
         maxToRenderPerBatch={10}
         windowSize={10}
         onScrollToIndexFailed={() => {}}
+        onDragEnd={({ data }) => setItems(data)}
       />
 
       <TouchableOpacity
@@ -847,6 +860,9 @@ const styles = StyleSheet.create({
   },
   removeButton: {
     backgroundColor: "#C62828",
+  },
+  dragButton: {
+    backgroundColor: "#455A64",
   },
   addButton: {
     backgroundColor: "#1976D2",
