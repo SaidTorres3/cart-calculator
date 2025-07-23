@@ -5,7 +5,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
   StyleSheet,
   Alert,
   Animated,
@@ -13,6 +12,10 @@ import {
   Platform,
   UIManager,
 } from "react-native";
+import DraggableFlatList, {
+  RenderItemParams,
+  ScaleDecorator,
+} from "react-native-draggable-flatlist";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
@@ -43,7 +46,7 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
   const [isRecording, setIsRecording] = useState(false);
   const [isFormVisible, setIsFormVisible] = useState(true);
   const rainbowAnim = useRef(new Animated.Value(0)).current;
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<any>(null);
 
   useEffect(() => {
     // Enable LayoutAnimation on Android
@@ -353,7 +356,7 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
     );
   };
 
-  const renderItem = ({ item }: { item: Item }) => {
+  const renderItem = ({ item, drag, isActive }: RenderItemParams<Item>) => {
     const isEditing = item.id === editingId;
     const borderColor = rainbowAnim
       .interpolate({
@@ -370,9 +373,10 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
       .toString();
 
     return (
-      <TouchableOpacity onPress={() => startEditing(item)} activeOpacity={0.7}>
-        <Animated.View
-          style={[
+      <ScaleDecorator>
+        <TouchableOpacity onPress={() => startEditing(item)} activeOpacity={0.7} disabled={isActive}>
+          <Animated.View
+            style={[
             styles.item,
             !item.visible && styles.hiddenItem,
             isEditing && {
@@ -380,8 +384,16 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
               borderColor: borderColor,
             },
             { opacity: item.fadeAnim },
-          ]}
-        >
+            ]}
+          >
+            <TouchableOpacity
+              onLongPress={drag}
+              onPress={(e) => e.stopPropagation()}
+              style={styles.dragHandle}
+              disabled={isActive}
+            >
+              <MaterialIcons name="drag-handle" size={20} color="white" />
+            </TouchableOpacity>
           <View style={styles.itemInfo}>
             <View style={styles.textContainer}>
               <Text
@@ -418,6 +430,7 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
           </View>
         </Animated.View>
       </TouchableOpacity>
+      </ScaleDecorator>
     );
   };
 
@@ -446,7 +459,7 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
         </View>
       </TouchableOpacity>
 
-      <FlatList
+      <DraggableFlatList
         ref={flatListRef}
         data={items}
         renderItem={renderItem}
@@ -457,6 +470,7 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
         maxToRenderPerBatch={10}
         windowSize={10}
         onScrollToIndexFailed={() => {}}
+        onDragEnd={({ data }) => setItems(data)}
       />
 
       {isFormVisible && (
@@ -595,6 +609,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     flexShrink: 0,
+  },
+  dragHandle: {
+    padding: 4,
+    justifyContent: "center",
+    alignItems: "center",
   },
   actionButton: {
     padding: 8,

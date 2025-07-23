@@ -5,7 +5,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
   StyleSheet,
   Alert,
   Animated,
@@ -14,6 +13,10 @@ import {
   UIManager,
   BackHandler,
 } from "react-native";
+import DraggableFlatList, {
+  RenderItemParams,
+  ScaleDecorator,
+} from "react-native-draggable-flatlist";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
@@ -56,7 +59,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
   const [isFormVisible, setIsFormVisible] = useState(true);
   const [formHeight, setFormHeight] = useState(0);
   const rainbowAnim = useRef(new Animated.Value(0)).current;
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<any>(null);
 
   const updateWishlistWithAI = async (
     wishlist: Item[],
@@ -498,7 +501,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
     );
   };
 
-  const renderItem = ({ item }: { item: Item }) => {
+  const renderItem = ({ item, drag, isActive }: RenderItemParams<Item>) => {
     const isEditing = item.id === editingId;
     const borderColor = rainbowAnim
       .interpolate({
@@ -515,19 +518,28 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
       .toString();
 
     return (
-      <TouchableOpacity onPress={() => startEditing(item)} activeOpacity={0.7}>
-        <Animated.View
-          style={[
-            styles.item,
-            !item.visible && styles.hiddenItem,
-            item.priceUncertain && styles.uncertainItem,
-            isEditing && {
-              borderWidth: 2,
-              borderColor: borderColor,
-            },
-            { opacity: item.fadeAnim },
-          ]}
-        >
+      <ScaleDecorator>
+        <TouchableOpacity onPress={() => startEditing(item)} activeOpacity={0.7} disabled={isActive}>
+          <Animated.View
+            style={[
+              styles.item,
+              !item.visible && styles.hiddenItem,
+              item.priceUncertain && styles.uncertainItem,
+              isEditing && {
+                borderWidth: 2,
+                borderColor: borderColor,
+              },
+              { opacity: item.fadeAnim },
+            ]}
+          >
+            <TouchableOpacity
+              onLongPress={drag}
+              onPress={(e) => e.stopPropagation()}
+              style={styles.dragHandle}
+              disabled={isActive}
+            >
+              <MaterialIcons name="drag-handle" size={20} color="white" />
+            </TouchableOpacity>
           <View style={styles.itemInfo}>
             <View style={styles.textContainer}>
               <Text
@@ -610,6 +622,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
           </View>
         </Animated.View>
       </TouchableOpacity>
+      </ScaleDecorator>
     );
   };
 
@@ -638,7 +651,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
         </View>
       </TouchableOpacity>
 
-      <FlatList
+      <DraggableFlatList
         ref={flatListRef}
         data={items}
         renderItem={renderItem}
@@ -649,6 +662,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
         maxToRenderPerBatch={10}
         windowSize={10}
         onScrollToIndexFailed={() => {}}
+        onDragEnd={({ data }) => setItems(data)}
       />
 
       <TouchableOpacity
@@ -830,6 +844,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     flexShrink: 0,
+  },
+  dragHandle: {
+    padding: 4,
+    justifyContent: "center",
+    alignItems: "center",
   },
   actionButton: {
     padding: 8,
