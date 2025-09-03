@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet, Switch, Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 
 interface SettingsModalProps {
@@ -32,18 +33,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   onClearApiKey,
   onAddApiKey,
 }) => {
+  const { t } = useTranslation();
   const confirmRemove = () => {
-    Alert.alert('Remove Gemini API Key?', 'You can add it again later.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: onClearApiKey },
+    Alert.alert(t('removeApiKeyConfirmTitle'), t('removeApiKeyConfirmMessage'), [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('remove'), style: 'destructive', onPress: onClearApiKey },
     ]);
   };
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.container}>
-          <Text style={styles.title}>Settings</Text>
-          <Text style={styles.sectionTitle}>Select AI Model</Text>
+          <Text style={styles.title}>{t('settings')}</Text>
+          <Text style={styles.sectionTitle}>{t('selectModel')}</Text>
           {MODELS.map((m) => (
             <TouchableOpacity
               key={m.value}
@@ -57,7 +59,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             </TouchableOpacity>
           ))}
           <View style={styles.toggleRow}>
-            <Text style={styles.optionText}>Auto-hide wishlisted on add</Text>
+            <Text style={styles.optionText}>{t('autoHide')}</Text>
             <Switch
               value={autoHideWishlistOnAdd}
               onValueChange={onToggleAutoHide}
@@ -67,16 +69,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             style={styles.addKeyButton}
             onPress={onAddApiKey}
           >
-            <Text style={styles.addKeyText}>Set Gemini API Key</Text>
+            <Text style={styles.addKeyText}>{t('setApiKey')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.removeKeyButton}
             onPress={confirmRemove}
           >
-            <Text style={styles.removeKeyText}>Remove Gemini API Key</Text>
+            <Text style={styles.removeKeyText}>{t('removeApiKey')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeText}>Close</Text>
+            <Text style={styles.closeText}>{t('close')}</Text>
           </TouchableOpacity>
         </View>
       </View>

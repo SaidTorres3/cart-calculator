@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
+import '../i18n';
 
 export default function RootLayout() {
   return (

@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
+import { useTranslation } from 'react-i18next';
 import { getApiKey } from "../config";
 import { GoogleGenAI } from "@google/genai";
 import { supportsThinkingConfig } from "./aiUtils";
@@ -22,6 +23,7 @@ const LLMChat: React.FC<LLMChatProps> = ({ selectedModel, onRequireApiKey }) => 
   >([]);
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   const sendMessage = async () => {
     if (inputText.trim() === "") return;
@@ -75,7 +77,7 @@ const LLMChat: React.FC<LLMChatProps> = ({ selectedModel, onRequireApiKey }) => 
       console.error("Error sending message:", error);
       setMessages((prevMessages) => [
         ...prevMessages,
-        { role: "assistant", content: "Failed to get response." },
+        { role: "assistant", content: t('failedResponse') },
       ]);
     } finally {
       setLoading(false);
@@ -97,18 +99,18 @@ const LLMChat: React.FC<LLMChatProps> = ({ selectedModel, onRequireApiKey }) => 
             <Text style={styles.messageText}>{message.content}</Text>
           </View>
         ))}
-        {loading && <Text style={styles.loadingText}>Loading...</Text>}
+        {loading && <Text style={styles.loadingText}>{t('loading')}</Text>}
       </ScrollView>
       <View style={styles.inputArea}>
         <TextInput
           style={styles.input}
           value={inputText}
           onChangeText={setInputText}
-          placeholder="Type your message..."
+          placeholder={t('typeMessage')}
           placeholderTextColor="#666"
           multiline
         />
-        <Button title="Send" onPress={sendMessage} disabled={loading} />
+        <Button title={t('send')} onPress={sendMessage} disabled={loading} />
       </View>
     </View>
   );
