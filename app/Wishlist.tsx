@@ -19,7 +19,7 @@ import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiKey } from "../config";
 import { GoogleGenAI } from "@google/genai";
-import { supportsThinkingConfig } from "./aiUtils";
+import { supportsThinkingConfig } from "../utils/aiUtils";
 import { useTranslation } from 'react-i18next';
 
 interface Item {

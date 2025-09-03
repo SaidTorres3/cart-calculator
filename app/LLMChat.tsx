@@ -10,7 +10,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { getApiKey } from "../config";
 import { GoogleGenAI } from "@google/genai";
-import { supportsThinkingConfig } from "./aiUtils";
+import { supportsThinkingConfig } from "../utils/aiUtils";
 
 interface LLMChatProps {
   selectedModel: string;

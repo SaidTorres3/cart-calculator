@@ -8,6 +8,8 @@ import fr from './locales/fr.json';
 import de from './locales/de.json';
 import zh from './locales/zh.json';
 
+const locale = Localization.locale || 'en';
+
 i18n.use(initReactI18next).init({
   compatibilityJSON: 'v3',
   resources: {
@@ -17,7 +19,7 @@ i18n.use(initReactI18next).init({
     de: { translation: de },
     zh: { translation: zh }
   },
-  lng: Localization.locale.split('-')[0],
+  lng: locale.split('-')[0],
   fallbackLng: 'en',
   interpolation: {
     escapeValue: false
