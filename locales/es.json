@@ -28,6 +28,7 @@
   "removeApiKeyConfirmMessage": "Puedes agregarla más tarde.",
   "settings": "Configuración",
   "selectModel": "Seleccionar modelo de IA",
+  "selectLanguage": "Seleccionar idioma",
   "autoHide": "Ocultar deseados al agregar",
   "close": "Cerrar",
   "enterApiKeyTitle": "Ingresar clave de Gemini",

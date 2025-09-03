@@ -28,6 +28,7 @@
   "removeApiKeyConfirmMessage": "You can add it again later.",
   "settings": "Settings",
   "selectModel": "Select AI Model",
+  "selectLanguage": "Select Language",
   "autoHide": "Auto-hide wishlisted on add",
   "close": "Close",
   "enterApiKeyTitle": "Enter Gemini API Key",

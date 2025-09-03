@@ -28,6 +28,7 @@
   "removeApiKeyConfirmMessage": "Sie können ihn später erneut hinzufügen.",
   "settings": "Einstellungen",
   "selectModel": "KI-Modell auswählen",
+  "selectLanguage": "Sprache auswählen",
   "autoHide": "Wunschliste beim Hinzufügen ausblenden",
   "close": "Schließen",
   "enterApiKeyTitle": "Gemini-API-Schlüssel eingeben",

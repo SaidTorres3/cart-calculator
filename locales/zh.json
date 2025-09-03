@@ -28,6 +28,7 @@
   "removeApiKeyConfirmMessage": "您可以稍后再添加。",
   "settings": "设置",
   "selectModel": "选择 AI 模型",
+  "selectLanguage": "选择语言",
   "autoHide": "添加时自动隐藏心愿单项目",
   "close": "关闭",
   "enterApiKeyTitle": "输入 Gemini API 密钥",

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet, Switch, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import { MaterialIcons } from '@expo/vector-icons';
 
 interface SettingsModalProps {
@@ -21,6 +22,14 @@ const MODELS = [
   { label: 'Gemini 2.0 Flash Lite', value: 'gemini-2.0-flash-lite' },
   { label: 'Gemma 3 12B', value: 'gemma-3-12b-it' },
   { label: 'Gemma 3 27B', value: 'gemma-3-27b-it' },
+];
+
+const LANGUAGES = [
+  { label: 'English', value: 'en' },
+  { label: 'Español', value: 'es' },
+  { label: 'Français', value: 'fr' },
+  { label: 'Deutsch', value: 'de' },
+  { label: '中文', value: 'zh' },
 ];
 
 const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -54,6 +63,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             >
               <Text style={styles.optionText}>{m.label}</Text>
               {selectedModel === m.value && (
+                <MaterialIcons name="check" size={24} color="#4CAF50" />
+              )}
+            </TouchableOpacity>
+          ))}
+          <Text style={styles.sectionTitle}>{t('selectLanguage')}</Text>
+          {LANGUAGES.map((lang) => (
+            <TouchableOpacity
+              key={lang.value}
+              style={[styles.option, i18n.language === lang.value && styles.selectedOption]}
+              onPress={() => i18n.changeLanguage(lang.value)}
+            >
+              <Text style={styles.optionText}>{lang.label}</Text>
+              {i18n.language === lang.value && (
                 <MaterialIcons name="check" size={24} color="#4CAF50" />
               )}
             </TouchableOpacity>
