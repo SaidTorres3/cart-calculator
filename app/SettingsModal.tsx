@@ -1,8 +1,16 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet, Switch, Alert } from 'react-native';
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Switch,
+  Alert,
+} from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
-import { MaterialIcons } from '@expo/vector-icons';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -55,31 +63,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         <View style={styles.container}>
           <Text style={styles.title}>{t('settings')}</Text>
           <Text style={styles.sectionTitle}>{t('selectModel')}</Text>
-          {MODELS.map((m) => (
-            <TouchableOpacity
-              key={m.value}
-              style={[styles.option, selectedModel === m.value && styles.selectedOption]}
-              onPress={() => onSelectModel(m.value)}
-            >
-              <Text style={styles.optionText}>{m.label}</Text>
-              {selectedModel === m.value && (
-                <MaterialIcons name="check" size={24} color="#4CAF50" />
-              )}
-            </TouchableOpacity>
-          ))}
+          <Picker
+            selectedValue={selectedModel}
+            onValueChange={(value) => onSelectModel(value)}
+            style={styles.picker}
+            dropdownIconColor="#fff"
+          >
+            {MODELS.map((m) => (
+              <Picker.Item label={m.label} value={m.value} key={m.value} />
+            ))}
+          </Picker>
           <Text style={styles.sectionTitle}>{t('selectLanguage')}</Text>
-          {LANGUAGES.map((lang) => (
-            <TouchableOpacity
-              key={lang.value}
-              style={[styles.option, i18n.language === lang.value && styles.selectedOption]}
-              onPress={() => i18n.changeLanguage(lang.value)}
-            >
-              <Text style={styles.optionText}>{lang.label}</Text>
-              {i18n.language === lang.value && (
-                <MaterialIcons name="check" size={24} color="#4CAF50" />
-              )}
-            </TouchableOpacity>
-          ))}
+          <Picker
+            selectedValue={i18n.language}
+            onValueChange={(value) => i18n.changeLanguage(value)}
+            style={styles.picker}
+            dropdownIconColor="#fff"
+          >
+            {LANGUAGES.map((lang) => (
+              <Picker.Item label={lang.label} value={lang.value} key={lang.value} />
+            ))}
+          </Picker>
           <View style={styles.toggleRow}>
             <Text style={styles.optionText}>{t('autoHide')}</Text>
             <Switch
@@ -134,20 +138,14 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 6,
   },
-  option: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-  },
-  selectedOption: {
-    backgroundColor: '#333',
-    borderRadius: 6,
-  },
   optionText: {
     color: '#fff',
     fontSize: 16,
+  },
+  picker: {
+    color: '#fff',
+    backgroundColor: '#333',
+    marginBottom: 10,
   },
   toggleRow: {
     flexDirection: 'row',
