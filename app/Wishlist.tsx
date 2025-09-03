@@ -19,7 +19,8 @@ import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiKey } from "../config";
 import { GoogleGenAI } from "@google/genai";
-import { supportsThinkingConfig } from "./aiUtils";
+import { supportsThinkingConfig } from "../utils/aiUtils";
+import { useTranslation } from 'react-i18next';
 
 interface Item {
   id: string;
@@ -44,6 +45,7 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
   const [isFormVisible, setIsFormVisible] = useState(true);
   const rainbowAnim = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Enable LayoutAnimation on Android
@@ -122,7 +124,7 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
       setRecording(recording);
       setIsRecording(true);
     } catch (err) {
-      Alert.alert("Error", "Failed to start recording");
+      Alert.alert(t('error'), t('failedStartRecording'));
     }
   };
 
@@ -216,12 +218,12 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
           });
         } catch (parseError) {
           console.error("Parse error:", parseError, "Response:", completionData);
-          Alert.alert("Error", "Failed to parse the response");
+          Alert.alert(t('error'), t('failedParseResponse'));
         }
       }
     } catch (error) {
       console.error("Error:", error);
-      Alert.alert("Error", "Failed to process voice command");
+      Alert.alert(t('error'), t('failedProcessVoiceCommand'));
     }
   };
 
@@ -286,7 +288,7 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
 
   const updateItem = () => {
     if (!product) {
-      Alert.alert("Error", "Please fill product");
+      Alert.alert(t('error'), t('fillProduct'));
       return;
     }
 
@@ -304,17 +306,17 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
   };
 
   const removeItem = (id: string) => {
-    Alert.alert("Delete Item", "Are you sure you want to delete this item?", [
+    Alert.alert(t('deleteItem'), t('deleteItemMessage'), [
       {
-        text: "Cancel",
-        style: "cancel",
+        text: t('cancel'),
+        style: 'cancel',
       },
       {
-        text: "Delete",
+        text: t('delete'),
         onPress: () => {
           setItems(items.filter((item) => item.id !== id));
         },
-        style: "destructive",
+        style: 'destructive',
       },
     ]);
   };
@@ -330,21 +332,21 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
   // New function to clear all items
   const clearAllItems = () => {
     if (items.length === 0) {
-      Alert.alert("No Items", "There are no items to clear.");
+      Alert.alert(t('noItems'), t('noItemsMessage'));
       return;
     }
 
     Alert.alert(
-      "Clear All Items",
-      "Are you sure you want to remove all items from your wishlist?",
+      t('clearAllItems'),
+      t('clearAllConfirmWishlist'),
       [
         {
-          text: "Cancel",
-          style: "cancel",
+          text: t('cancel'),
+          style: 'cancel',
         },
         {
-          text: "Clear All",
-          style: "destructive",
+          text: t('clearAll'),
+          style: 'destructive',
           onPress: () => {
             setItems([]);
           },
@@ -431,7 +433,7 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
         style={styles.header}
         onPress={() => setIsFormVisible(!isFormVisible)}
       >
-        <Text style={styles.title}>Wishlist</Text>
+        <Text style={styles.title}>{t('wishlist')}</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity onPress={clearAllItems} style={styles.clearAllIcon}>
             <MaterialIcons name="delete-sweep" size={28} color="#C62828" />
@@ -464,7 +466,7 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
           <TextInput
             ref={productRef}
             style={styles.input}
-            placeholder="Producto"
+            placeholder={t('productPlaceholder')}
             placeholderTextColor="#666"
             value={product}
             onChangeText={setProduct}

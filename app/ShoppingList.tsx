@@ -20,7 +20,8 @@ import * as FileSystem from "expo-file-system";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiKey } from "../config";
 import { GoogleGenAI } from "@google/genai";
-import { supportsThinkingConfig } from "./aiUtils";
+import { supportsThinkingConfig } from "../utils/aiUtils";
+import { useTranslation } from 'react-i18next';
 
 interface Item {
   id: string;
@@ -57,6 +58,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
   const [formHeight, setFormHeight] = useState(0);
   const rainbowAnim = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
+  const { t } = useTranslation();
 
   const updateWishlistWithAI = async (
     wishlist: Item[],
@@ -216,7 +218,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
       setRecording(recording);
       setIsRecording(true);
     } catch (err) {
-      Alert.alert("Error", "Failed to start recording");
+      Alert.alert(t('error'), t('failedStartRecording'));
     }
   };
 
@@ -325,12 +327,12 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
             "Response:",
             completionData
           );
-          Alert.alert("Error", "Failed to parse the response");
+          Alert.alert(t('error'), t('failedParseResponse'));
         }
       }
     } catch (error) {
       console.error("Error:", error);
-      Alert.alert("Error", "Failed to process voice command");
+      Alert.alert(t('error'), t('failedProcessVoiceCommand'));
     }
   };
 
@@ -405,7 +407,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
 
   const updateItem = () => {
     if (!product || !price) {
-      Alert.alert("Error", "Please fill product and price");
+      Alert.alert(t('error'), t('fillProductAndPrice'));
       return;
     }
 
@@ -431,17 +433,17 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
   };
 
   const removeItem = (id: string) => {
-    Alert.alert("Delete Item", "Are you sure you want to delete this item?", [
+    Alert.alert(t('deleteItem'), t('deleteItemMessage'), [
       {
-        text: "Cancel",
-        style: "cancel",
+        text: t('cancel'),
+        style: 'cancel',
       },
       {
-        text: "Delete",
+        text: t('delete'),
         onPress: () => {
           setItems(items.filter((item) => item.id !== id));
         },
-        style: "destructive",
+        style: 'destructive',
       },
     ]);
   };
@@ -475,21 +477,21 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
   // New function to clear all items
   const clearAllItems = () => {
     if (items.length === 0) {
-      Alert.alert("No Items", "There are no items to clear.");
+      Alert.alert(t('noItems'), t('noItemsMessage'));
       return;
     }
 
     Alert.alert(
-      "Clear All Items",
-      "Are you sure you want to remove all items from your shopping list?",
+      t('clearAllItems'),
+      t('clearAllConfirmShopping'),
       [
         {
-          text: "Cancel",
-          style: "cancel",
+          text: t('cancel'),
+          style: 'cancel',
         },
         {
-          text: "Clear All",
-          style: "destructive",
+          text: t('clearAll'),
+          style: 'destructive',
           onPress: () => {
             setItems([]);
           },
@@ -658,7 +660,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
         ]}
         onPress={() => setIsFormVisible(!isFormVisible)}
       >
-        <Text style={styles.totalText}>Total: $ {calculateTotal()}</Text>
+        <Text style={styles.totalText}>{t('total')}: $ {calculateTotal()}</Text>
       </TouchableOpacity>
 
       {isFormVisible && (
@@ -666,7 +668,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
           <TextInput
             ref={productRef}
             style={styles.input}
-            placeholder="Producto"
+            placeholder={t('productPlaceholder')}
             placeholderTextColor="#666"
             value={product}
             onChangeText={setProduct}
@@ -679,7 +681,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
             <TextInput
               ref={priceRef}
               style={[styles.input, styles.priceInput]}
-              placeholder="Precio"
+              placeholder={t('pricePlaceholder')}
               placeholderTextColor="#666"
               value={price}
               onChangeText={(text) => setPrice(text.replace(/[^0-9.]/g, ""))}
@@ -692,7 +694,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
             <TextInput
               ref={quantityRef}
               style={[styles.input, styles.quantityInput]}
-              placeholder="Cantidad"
+              placeholder={t('quantityPlaceholder')}
               placeholderTextColor="#666"
               value={quantity}
               onChangeText={(text) => setQuantity(text.replace(/[^0-9.]/g, ""))}

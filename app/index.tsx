@@ -23,6 +23,7 @@ import SettingsModal from "./SettingsModal";
 import ApiKeyModal from "./ApiKeyModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiKey, LLM_CHAT_ENABLED, initApiKey, clearApiKey, setApiKey } from "../config";
+import { useTranslation } from 'react-i18next';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -38,6 +39,7 @@ export default function Index() {
   const [autoHideWishlistOnAdd, setAutoHideWishlistOnAdd] = useState(true);
   const [apiKeyModalVisible, setApiKeyModalVisible] = useState(false);
   const [apiKeyError, setApiKeyError] = useState(false);
+  const { t } = useTranslation();
 
   const hideKeyboard = () => {
     Keyboard.dismiss();
@@ -181,7 +183,7 @@ export default function Index() {
   if (error) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>Error: {error.message}</Text>
+        <Text style={styles.errorText}>{t('error')}: {error.message}</Text>
       </View>
     );
   }
@@ -200,7 +202,7 @@ export default function Index() {
                 : styles.inactiveHeaderText
             }
           >
-            Shopping List
+            {t('shoppingList')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -214,7 +216,7 @@ export default function Index() {
                 : styles.inactiveHeaderText
             }
           >
-            Wishlist
+            {t('wishlist')}
           </Text>
         </TouchableOpacity>
         {LLM_CHAT_ENABLED && (
@@ -229,7 +231,7 @@ export default function Index() {
                   : styles.inactiveHeaderText
               }
             >
-              LLM Chat
+              {t('llmChat')}
             </Text>
           </TouchableOpacity>
         )}

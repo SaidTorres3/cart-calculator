@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 interface ApiKeyModalProps {
   visible: boolean;
@@ -10,6 +11,7 @@ interface ApiKeyModalProps {
 
 const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ visible, onClose, onSave, showError }) => {
   const [key, setKey] = useState('');
+  const { t } = useTranslation();
 
   const handleSave = () => {
     if (!key.trim()) return;
@@ -21,21 +23,21 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ visible, onClose, onSave, sho
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.container}>
-          <Text style={styles.title}>Enter Gemini API Key</Text>
-          {showError && <Text style={styles.error}>A Gemini API key is required.</Text>}
+          <Text style={styles.title}>{t('enterApiKeyTitle')}</Text>
+          {showError && <Text style={styles.error}>{t('apiKeyRequired')}</Text>}
           <TextInput
             style={styles.input}
             value={key}
             onChangeText={setKey}
-            placeholder="Gemini API Key"
+            placeholder={t('apiKeyPlaceholder')}
             placeholderTextColor="#888"
             autoCapitalize="none"
           />
           <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveText}>Save</Text>
+            <Text style={styles.saveText}>{t('save')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-            <Text style={styles.cancelText}>Skip</Text>
+            <Text style={styles.cancelText}>{t('skip')}</Text>
           </TouchableOpacity>
         </View>
       </View>
