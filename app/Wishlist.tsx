@@ -292,11 +292,14 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
       return;
     }
 
-    setItems(
-      items.map((item) => (item.id === editingId ? { ...item, product } : item))
-    );
-
-    setEditingId(null);
+    setEditingId((currentEditingId) => {
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === currentEditingId ? { ...item, product } : item
+        )
+      );
+      return null;
+    });
     setProduct("");
   };
 
@@ -314,7 +317,7 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
       {
         text: t('delete'),
         onPress: () => {
-          setItems(items.filter((item) => item.id !== id));
+          setItems((prev) => prev.filter((item) => item.id !== id));
         },
         style: 'destructive',
       },
@@ -322,8 +325,8 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
   };
 
   const toggleVisibility = (id: string) => {
-    setItems(
-      items.map((item) =>
+    setItems((prev) =>
+      prev.map((item) =>
         item.id === id ? { ...item, visible: !item.visible } : item
       )
     );
@@ -357,67 +360,66 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
 
   const renderItem = ({ item }: { item: Item }) => {
     const isEditing = item.id === editingId;
-    const borderColor = rainbowAnim
-      .interpolate({
-        inputRange: [0, 0.2, 0.4, 0.6, 0.8, 1],
-        outputRange: [
-          "#ff0000",
-          "#ffa500",
-          "#ffff00",
-          "#008000",
-          "#0000ff",
-          "#4b0082",
-        ],
-      })
-      .toString();
+    const animatedBorderColor = rainbowAnim.interpolate({
+      inputRange: [0, 0.2, 0.4, 0.6, 0.8, 1],
+      outputRange: [
+        "#ff0000",
+        "#ffa500",
+        "#ffff00",
+        "#008000",
+        "#0000ff",
+        "#4b0082",
+      ],
+    });
 
     return (
       <TouchableOpacity onPress={() => startEditing(item)} activeOpacity={0.7}>
-        <Animated.View
-          style={[
-            styles.item,
-            !item.visible && styles.hiddenItem,
-            isEditing && {
-              borderWidth: 2,
-              borderColor: borderColor,
-            },
-            { opacity: item.fadeAnim },
-          ]}
-        >
-          <View style={styles.itemInfo}>
-            <View style={styles.textContainer}>
-              <Text
-                style={[styles.itemText, !item.visible && styles.hiddenText]}
-                numberOfLines={2}
-              >
-                {item.product}
-              </Text>
+        <Animated.View style={{ opacity: item.fadeAnim }}>
+          <Animated.View
+            style={[
+              styles.item,
+              !item.visible && styles.hiddenItem,
+              {
+                borderWidth: isEditing ? 2 : 0,
+                borderColor: animatedBorderColor,
+              },
+            ]}
+          >
+            <View style={styles.itemInfo}>
+              <View style={styles.textContainer}>
+                <Text
+                  style={[styles.itemText, !item.visible && styles.hiddenText]}
+                  numberOfLines={2}
+                >
+                  {item.product}
+                </Text>
+              </View>
             </View>
-          </View>
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.visibilityButton]}
-              onPress={(e) => {
-                e.stopPropagation();
-                toggleVisibility(item.id);
-              }}
-            >
-              <MaterialIcons
-                name={item.visible ? "visibility" : "visibility-off"}
-                size={20}
-                color="white"
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.removeButton]}
-              onPress={(e) => {
-                e.stopPropagation();
-                removeItem(item.id);
-              }}
-            >
-              <MaterialIcons name="delete" size={20} color="white" />
-            </TouchableOpacity>
-          </View>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.visibilityButton]}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  toggleVisibility(item.id);
+                }}
+              >
+                <MaterialIcons
+                  name={item.visible ? "visibility" : "visibility-off"}
+                  size={20}
+                  color="white"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.removeButton]}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  removeItem(item.id);
+                }}
+              >
+                <MaterialIcons name="delete" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
         </Animated.View>
       </TouchableOpacity>
     );
@@ -453,6 +455,7 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
         data={items}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
+        extraData={editingId}
         style={styles.list}
         contentContainerStyle={{ paddingBottom: isFormVisible ? 250 : 100 }}
         initialNumToRender={20}
