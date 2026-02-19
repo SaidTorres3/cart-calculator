@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "entryPoint": "./app/index.tsx",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
@@ -33,7 +32,10 @@
           "imageWidth": 200,
           "backgroundColor": "#1a1a1a"
         }
-      ]
+      ],
+      "expo-font",
+      "expo-localization",
+      "expo-web-browser"
     ],
     "extra": {
       "GROQ_API_KEY": {
