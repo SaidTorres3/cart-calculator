@@ -109,7 +109,7 @@ export default function Index() {
         ) => {
           return (
             Math.abs(gestureState.dx) > Math.abs(gestureState.dy) &&
-            Math.abs(gestureState.dx) > 20
+            Math.abs(gestureState.dx) > 10
           );
         },
         onPanResponderGrant: () => {
@@ -119,9 +119,9 @@ export default function Index() {
           _: GestureResponderEvent,
           gestureState: PanResponderGestureState
         ) => {
-          if (gestureState.dx > 50) {
+          if (gestureState.dx > 30) {
             switchToPrev();
-          } else if (gestureState.dx < -50) {
+          } else if (gestureState.dx < -30) {
             switchToNext();
           }
         },
