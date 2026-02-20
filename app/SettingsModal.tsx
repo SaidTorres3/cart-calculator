@@ -19,6 +19,8 @@ interface SettingsModalProps {
   onSelectModel: (model: string) => void;
   autoHideWishlistOnAdd: boolean;
   onToggleAutoHide: () => void;
+  budgetEnabled: boolean;
+  onToggleBudget: () => void;
   onClearApiKey: () => void;
   onAddApiKey: () => void;
 }
@@ -45,6 +47,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   onSelectModel,
   autoHideWishlistOnAdd,
   onToggleAutoHide,
+  budgetEnabled,
+  onToggleBudget,
   onClearApiKey,
   onAddApiKey,
 }) => {
@@ -87,6 +91,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             <Switch
               value={autoHideWishlistOnAdd}
               onValueChange={onToggleAutoHide}
+            />
+          </View>
+          <View style={styles.toggleRow}>
+            <Text style={styles.optionText}>{t('budgetEnabled')}</Text>
+            <Switch
+              value={budgetEnabled}
+              onValueChange={onToggleBudget}
             />
           </View>
           <TouchableOpacity

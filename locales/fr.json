@@ -40,5 +40,16 @@
   "send": "Envoyer",
   "loading": "Chargement...",
   "failedResponse": "Échec de l'obtention de la réponse.",
-  "remove": "Supprimer"
+  "remove": "Supprimer",
+  "budget": "Budget",
+  "budgetEnabled": "Activer le budget",
+  "budgetTotal": "Budget",
+  "budgetRemaining": "Restant",
+  "budgetEntryName": "Nom",
+  "budgetEntryAmount": "Montant",
+  "addBudgetEntry": "Ajouter",
+  "deleteBudgetEntry": "Supprimer l'entrée",
+  "deleteBudgetEntryMessage": "Êtes-vous sûr de vouloir supprimer cette entrée de budget ?",
+  "clearAllBudgetEntries": "Supprimer toutes les entrées",
+  "clearAllBudgetConfirm": "Êtes-vous sûr de vouloir supprimer toutes les entrées de budget ?"
 }

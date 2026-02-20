@@ -40,5 +40,16 @@
   "send": "发送",
   "loading": "加载中...",
   "failedResponse": "获取响应失败。",
-  "remove": "移除"
+  "remove": "移除",
+  "budget": "预算",
+  "budgetEnabled": "启用预算",
+  "budgetTotal": "预算",
+  "budgetRemaining": "剩余",
+  "budgetEntryName": "名称",
+  "budgetEntryAmount": "金额",
+  "addBudgetEntry": "添加",
+  "deleteBudgetEntry": "删除条目",
+  "deleteBudgetEntryMessage": "确定要删除此预算条目吗？",
+  "clearAllBudgetEntries": "清除所有条目",
+  "clearAllBudgetConfirm": "确定要删除所有预算条目吗？"
 }

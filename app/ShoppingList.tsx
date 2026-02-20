@@ -13,6 +13,7 @@ import {
   Platform,
   UIManager,
   BackHandler,
+  AppState,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
@@ -39,15 +40,19 @@ const WISHLIST_KEY = "WISHLIST_ITEMS";
 interface ShoppingListProps {
   selectedModel: string;
   autoHideWishlistOnAdd: boolean;
+  budgetEnabled: boolean;
   onRequireApiKey: () => void;
 }
 
 const ShoppingList: React.FC<ShoppingListProps> = ({
   selectedModel,
   autoHideWishlistOnAdd,
+  budgetEnabled,
   onRequireApiKey,
 }) => {
   const [items, setItems] = useState<Item[]>([]);
+  const [budgetTotal, setBudgetTotal] = useState(0);
+  const [hasBudgetEntries, setHasBudgetEntries] = useState(false);
   const [product, setProduct] = useState("");
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState("1");
@@ -465,6 +470,32 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
     );
   };
 
+  const loadBudget = async () => {
+    if (!budgetEnabled) return;
+    try {
+      const saved = await AsyncStorage.getItem('BUDGET_ENTRIES');
+      if (saved) {
+        const entries: { amount: string }[] = JSON.parse(saved);
+        const total = entries.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+        setBudgetTotal(total);
+        setHasBudgetEntries(entries.length > 0);
+      } else {
+        setBudgetTotal(0);
+        setHasBudgetEntries(false);
+      }
+    } catch (e) {
+      console.error('Failed to load budget', e);
+    }
+  };
+
+  useEffect(() => {
+    loadBudget();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') loadBudget();
+    });
+    return () => sub.remove();
+  }, [budgetEnabled]);
+
   const calculateTotal = () => {
     return items
       .filter((item) => item.visible)
@@ -661,6 +692,26 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
         ]}
         onPress={() => setIsFormVisible(!isFormVisible)}
       >
+        {budgetEnabled && hasBudgetEntries && (
+          <>
+            <View style={styles.budgetRow}>
+              <Text style={styles.budgetLabel}>{t('budgetTotal')}:</Text>
+              <Text style={styles.budgetLabelValue}>$ {budgetTotal.toFixed(2)}</Text>
+            </View>
+            <View style={styles.budgetRow}>
+              <Text style={styles.budgetLabel}>{t('budgetRemaining')}:</Text>
+              <Text
+                style={[
+                  styles.budgetLabelValue,
+                  { color: budgetTotal - parseFloat(calculateTotal()) >= 0 ? '#4CAF50' : '#C62828' },
+                ]}
+              >
+                $ {(budgetTotal - parseFloat(calculateTotal())).toFixed(2)}
+              </Text>
+            </View>
+            <View style={styles.budgetDivider} />
+          </>
+        )}
         <Text style={styles.totalText}>{t('total')}: $ {calculateTotal()}</Text>
       </TouchableOpacity>
 
@@ -907,6 +958,26 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#4CAF50",
     textAlign: "right",
+  },
+  budgetRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 3,
+  },
+  budgetLabel: {
+    color: "#aaa",
+    fontSize: 13,
+    fontWeight: "bold",
+  },
+  budgetLabelValue: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "bold",
+  },
+  budgetDivider: {
+    height: 1,
+    backgroundColor: "#555",
+    marginBottom: 5,
   },
   clearAllButton: {
     flexDirection: "row",

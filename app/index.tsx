@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import ShoppingList from "./ShoppingList";
 import Wishlist from "./Wishlist";
+import Budget from "./BudgetPanel";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import * as SplashScreen from "expo-splash-screen";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -32,11 +33,12 @@ export default function Index() {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [activeScreen, setActiveScreen] = useState<
-    "shoppingList" | "wishlist" | "llmChat"
+    "shoppingList" | "wishlist" | "budget" | "llmChat"
   >("shoppingList");
   const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-lite");
   const [configVisible, setConfigVisible] = useState(false);
   const [autoHideWishlistOnAdd, setAutoHideWishlistOnAdd] = useState(true);
+  const [budgetEnabled, setBudgetEnabled] = useState(false);
   const [apiKeyModalVisible, setApiKeyModalVisible] = useState(false);
   const [apiKeyError, setApiKeyError] = useState(false);
   const { t } = useTranslation();
@@ -49,9 +51,12 @@ export default function Index() {
     }
   };
 
-  const screens: ("shoppingList" | "wishlist" | "llmChat")[] = LLM_CHAT_ENABLED
-    ? ["shoppingList", "wishlist", "llmChat"]
-    : ["shoppingList", "wishlist"];
+  const screens: ("shoppingList" | "wishlist" | "budget" | "llmChat")[] = [
+    "shoppingList",
+    "wishlist",
+    ...(budgetEnabled ? ["budget" as const] : []),
+    ...(LLM_CHAT_ENABLED ? ["llmChat" as const] : []),
+  ];
 
   const switchToNext = useCallback(() => {
     hideKeyboard();
@@ -80,6 +85,15 @@ export default function Index() {
     const newValue = !autoHideWishlistOnAdd;
     setAutoHideWishlistOnAdd(newValue);
     await AsyncStorage.setItem('AUTO_HIDE_WISHLIST_ON_ADD', newValue.toString());
+  };
+
+  const toggleBudget = async () => {
+    const newValue = !budgetEnabled;
+    setBudgetEnabled(newValue);
+    await AsyncStorage.setItem('BUDGET_ENABLED', newValue.toString());
+    if (!newValue && activeScreen === 'budget') {
+      setActiveScreen('shoppingList');
+    }
   };
 
   const handleClearApiKey = async () => {
@@ -169,6 +183,10 @@ export default function Index() {
       if (hideSetting !== null) {
         setAutoHideWishlistOnAdd(hideSetting === 'true');
       }
+      const budgetSetting = await AsyncStorage.getItem('BUDGET_ENABLED');
+      if (budgetSetting !== null) {
+        setBudgetEnabled(budgetSetting === 'true');
+      }
     })();
   }, []);
 
@@ -219,6 +237,22 @@ export default function Index() {
             {t('wishlist')}
           </Text>
         </TouchableOpacity>
+        {budgetEnabled && (
+          <TouchableOpacity
+            onPressIn={hideKeyboard}
+            onPress={() => setActiveScreen("budget")}
+          >
+            <Text
+              style={
+                activeScreen === "budget"
+                  ? styles.activeHeaderText
+                  : styles.inactiveHeaderText
+              }
+            >
+              {t('budget')}
+            </Text>
+          </TouchableOpacity>
+        )}
         {LLM_CHAT_ENABLED && (
           <TouchableOpacity
             onPressIn={hideKeyboard}
@@ -246,10 +280,13 @@ export default function Index() {
         <ShoppingList
           selectedModel={selectedModel}
           autoHideWishlistOnAdd={autoHideWishlistOnAdd}
+          budgetEnabled={budgetEnabled}
           onRequireApiKey={requireApiKey}
         />
       ) : activeScreen === "wishlist" ? (
         <Wishlist selectedModel={selectedModel} onRequireApiKey={requireApiKey} />
+      ) : activeScreen === "budget" ? (
+        <Budget selectedModel={selectedModel} onRequireApiKey={requireApiKey} />
       ) : LLM_CHAT_ENABLED ? (
         <LLMChat selectedModel={selectedModel} onRequireApiKey={requireApiKey} />
       ) : null}
@@ -260,6 +297,8 @@ export default function Index() {
         onSelectModel={handleSelectModel}
         autoHideWishlistOnAdd={autoHideWishlistOnAdd}
         onToggleAutoHide={toggleAutoHide}
+        budgetEnabled={budgetEnabled}
+        onToggleBudget={toggleBudget}
         onClearApiKey={handleClearApiKey}
         onAddApiKey={() => setApiKeyModalVisible(true)}
       />

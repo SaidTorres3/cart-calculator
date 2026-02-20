@@ -40,5 +40,16 @@
   "send": "Senden",
   "loading": "Lädt...",
   "failedResponse": "Antwort konnte nicht abgerufen werden.",
-  "remove": "Entfernen"
+  "remove": "Entfernen",
+  "budget": "Budget",
+  "budgetEnabled": "Budget aktivieren",
+  "budgetTotal": "Budget",
+  "budgetRemaining": "Verbleibend",
+  "budgetEntryName": "Name",
+  "budgetEntryAmount": "Betrag",
+  "addBudgetEntry": "Hinzufügen",
+  "deleteBudgetEntry": "Eintrag löschen",
+  "deleteBudgetEntryMessage": "Möchten Sie diesen Budgeteintrag wirklich löschen?",
+  "clearAllBudgetEntries": "Alle Einträge löschen",
+  "clearAllBudgetConfirm": "Möchten Sie wirklich alle Budgeteinträge entfernen?"
 }
