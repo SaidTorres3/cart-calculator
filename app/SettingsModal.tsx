@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import i18n from '../i18n';
 
 interface SettingsModalProps {
@@ -53,6 +54,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   onAddApiKey,
 }) => {
   const { t } = useTranslation();
+  const handleLanguageChange = async (value: string) => {
+    i18n.changeLanguage(value);
+    await AsyncStorage.setItem('user-language', value);
+  };
   const confirmRemove = () => {
     Alert.alert(t('removeApiKeyConfirmTitle'), t('removeApiKeyConfirmMessage'), [
       { text: t('cancel'), style: 'cancel' },
@@ -78,7 +83,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           <Text style={styles.sectionTitle}>{t('selectLanguage')}</Text>
           <Picker
             selectedValue={i18n.language}
-            onValueChange={(value) => i18n.changeLanguage(value)}
+            onValueChange={handleLanguageChange}
             style={styles.picker}
             dropdownIconColor="#fff"
           >
