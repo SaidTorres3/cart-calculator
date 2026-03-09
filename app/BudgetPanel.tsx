@@ -26,6 +26,7 @@ interface BudgetEntry {
   id: string;
   name: string;
   amount: string;
+  visible: boolean;
 }
 
 const BUDGET_STORAGE_KEY = 'BUDGET_ENTRIES';
@@ -123,10 +124,9 @@ const Budget: React.FC<BudgetProps> = ({ selectedModel, onRequireApiKey }) => {
     }
   }, [entries]);
 
-  const budgetTotal = entries.reduce(
-    (sum, e) => sum + (parseFloat(e.amount) || 0),
-    0
-  );
+  const budgetTotal = entries
+    .filter((e) => e.visible)
+    .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
   const remaining = budgetTotal - cartTotal;
 
   const startRecording = async () => {
@@ -195,6 +195,7 @@ Output: Return ONLY a JSON array or [] for unrecognizable input.`,
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
         name: r.name || '',
         amount: (parseFloat(r.amount) || 0).toFixed(2),
+        visible: true,
       }));
       setEntries((prev) => [...newEntries, ...prev]);
     } catch (error) {
@@ -210,6 +211,7 @@ Output: Return ONLY a JSON array or [] for unrecognizable input.`,
       id: Date.now().toString(),
       name: name.trim(),
       amount: parseFloat(amount).toFixed(2),
+      visible: true,
     };
     setEntries((prev) => [newEntry, ...prev]);
     setName('');
@@ -236,6 +238,13 @@ Output: Return ONLY a JSON array or [] for unrecognizable input.`,
     setEditingId(entry.id);
     setName(entry.name);
     setAmount(entry.amount);
+  };
+
+  const toggleVisibility = (id: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setEntries((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, visible: !e.visible } : e))
+    );
   };
 
   const cancelEditing = () => {
@@ -282,22 +291,37 @@ Output: Return ONLY a JSON array or [] for unrecognizable input.`,
     const isEditing = item.id === editingId;
     return (
       <TouchableOpacity onPress={() => startEditing(item)} activeOpacity={0.7}>
-        <View style={[styles.entry, isEditing && styles.entryEditing]}>
+        <View style={[styles.entry, isEditing && styles.entryEditing, !item.visible && styles.hiddenEntry]}>
           <View style={styles.entryInfo}>
-            <Text style={styles.entryName} numberOfLines={1}>
+            <Text style={[styles.entryName, !item.visible && styles.hiddenText]} numberOfLines={1}>
               {item.name}
             </Text>
-            <Text style={styles.entryAmount}>${item.amount}</Text>
+            <Text style={[styles.entryAmount, !item.visible && styles.hiddenText]}>${item.amount}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.removeBtn}
-            onPress={(e) => {
-              e.stopPropagation();
-              removeEntry(item.id);
-            }}
-          >
-            <MaterialIcons name="delete" size={20} color="white" />
-          </TouchableOpacity>
+          <View style={styles.entryButtons}>
+            <TouchableOpacity
+              style={styles.visibilityBtn}
+              onPress={(e) => {
+                e.stopPropagation();
+                toggleVisibility(item.id);
+              }}
+            >
+              <MaterialIcons
+                name={item.visible ? 'visibility' : 'visibility-off'}
+                size={20}
+                color="white"
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.removeBtn}
+              onPress={(e) => {
+                e.stopPropagation();
+                removeEntry(item.id);
+              }}
+            >
+              <MaterialIcons name="delete" size={20} color="white" />
+            </TouchableOpacity>
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -481,6 +505,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 8,
   },
+  entryButtons: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  visibilityBtn: {
+    backgroundColor: '#1565C0',
+    padding: 8,
+    borderRadius: 8,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   removeBtn: {
     backgroundColor: '#C62828',
     padding: 8,
@@ -489,6 +526,13 @@ const styles = StyleSheet.create({
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  hiddenEntry: {
+    opacity: 0.5,
+    backgroundColor: '#1e1e1e',
+  },
+  hiddenText: {
+    color: '#666',
   },
   summaryContainer: {
     position: 'absolute',
