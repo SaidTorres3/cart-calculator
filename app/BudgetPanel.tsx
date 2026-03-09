@@ -53,6 +53,7 @@ const Budget: React.FC<BudgetProps> = ({ selectedModel, onRequireApiKey, onRefre
   const [amount, setAmount] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formHeight, setFormHeight] = useState(0);
+  const [isFormVisible, setIsFormVisible] = useState(true);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const nameRef = useRef<TextInput>(null);
@@ -366,7 +367,10 @@ Output: Return ONLY a JSON array or [] for unrecognizable input.`,
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={0}
     >
-      <View style={styles.header}>
+      <TouchableOpacity
+        style={styles.header}
+        onPress={() => setIsFormVisible(!isFormVisible)}
+      >
         <Text style={styles.title} numberOfLines={1}>{t('budget')}</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity 
@@ -377,20 +381,27 @@ Output: Return ONLY a JSON array or [] for unrecognizable input.`,
           >
             <MaterialIcons name="delete-sweep" size={28} color="#C62828" />
           </TouchableOpacity>
+          <TouchableOpacity style={styles.collapseButton}>
+            <MaterialIcons
+              name={isFormVisible ? 'expand-less' : 'expand-more'}
+              size={28}
+              color="#1976D2"
+            />
+          </TouchableOpacity>
         </View>
-      </View>
+      </TouchableOpacity>
 
       <FlatList
         data={entries}
         renderItem={renderEntry}
         keyExtractor={(item) => item.id}
         style={styles.list}
-        contentContainerStyle={{ paddingBottom: formHeight + 180 }}
+        contentContainerStyle={{ paddingBottom: isFormVisible ? formHeight + 180 : 100 }}
         initialNumToRender={20}
       />
 
       {/* Summary pinned above the form */}
-      <View style={[styles.summaryContainer, { bottom: formHeight + 20 }]}>
+      <View style={[styles.summaryContainer, { bottom: isFormVisible ? formHeight + 20 : 20 }]}>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>{t('budgetTotal')}:</Text>
           <Text style={styles.summaryValue}>${budgetTotal.toFixed(2)}</Text>
@@ -413,6 +424,7 @@ Output: Return ONLY a JSON array or [] for unrecognizable input.`,
       </View>
 
       {/* Add / Edit form */}
+      {isFormVisible && (
       <View
         style={styles.inputContainer}
         onLayout={(e) => setFormHeight(e.nativeEvent.layout.height)}
@@ -477,6 +489,7 @@ Output: Return ONLY a JSON array or [] for unrecognizable input.`,
           />
         </TouchableOpacity>
       </View>
+      )}
     </KeyboardAvoidingView>
   );
 };
@@ -506,8 +519,12 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
   },
   clearAllIcon: {
+    padding: 8,
+  },
+  collapseButton: {
     padding: 8,
   },
   list: {

@@ -1,7 +1,7 @@
 {
   "name": "cart-calculator",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "1.7.0",
   "scripts": {
     "start": "npx expo start",
     "reset-project": "node ./scripts/reset-project.js",

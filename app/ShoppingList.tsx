@@ -689,7 +689,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
         style={styles.header}
         onPress={() => setIsFormVisible(!isFormVisible)}
       >
-        <Text style={styles.title} numberOfLines={1}>Cart Calculator</Text>
+        <Text style={styles.title} numberOfLines={1}>{t('shoppingList')}</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity 
             onPress={clearAllItems} 

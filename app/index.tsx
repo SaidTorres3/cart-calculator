@@ -375,12 +375,10 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
     fontSize: 14,
-    numberOfLines: 1,
   },
   inactiveHeaderText: {
     color: "#aaa",
     fontSize: 14,
-    numberOfLines: 1,
   },
   settingsButton: {
     padding: 8,
