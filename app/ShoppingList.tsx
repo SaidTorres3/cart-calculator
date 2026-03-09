@@ -1033,6 +1033,7 @@ const styles = StyleSheet.create({
   },
   list: {
     marginBottom: 20,
+    padding: 10
   },
   priceQuantityContainer: {
     flexDirection: "row",
