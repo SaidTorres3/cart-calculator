@@ -358,7 +358,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-start",
     alignItems: "center",
-    padding: 10,
+    paddingLeft: 10,
+    paddingRight: 10,
     position: "relative",
   },
   headerTabsContainer: {

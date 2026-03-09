@@ -561,7 +561,7 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey, onR
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 10,
     backgroundColor: "#1a1a1a",
   },
   header: {

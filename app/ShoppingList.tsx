@@ -839,7 +839,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 5,
     backgroundColor: "#1a1a1a",
   },
   header: {
