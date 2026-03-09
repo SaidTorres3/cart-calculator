@@ -31,10 +31,12 @@ interface BudgetEntry {
 
 const BUDGET_STORAGE_KEY = 'BUDGET_ENTRIES';
 const SHOPPING_STORAGE_KEY = 'SHOPPING_ITEMS';
+const WISHLIST_STORAGE_KEY = 'WISHLIST_ITEMS';
 
 interface BudgetProps {
   selectedModel: string;
   onRequireApiKey: () => void;
+  onRefreshAll?: () => void;
 }
 
 interface ShoppingItem {
@@ -44,7 +46,7 @@ interface ShoppingItem {
   visible: boolean;
 }
 
-const Budget: React.FC<BudgetProps> = ({ selectedModel, onRequireApiKey }) => {
+const Budget: React.FC<BudgetProps> = ({ selectedModel, onRequireApiKey, onRefreshAll }) => {
   const [entries, setEntries] = useState<BudgetEntry[]>([]);
   const [cartTotal, setCartTotal] = useState(0);
   const [name, setName] = useState('');
@@ -287,6 +289,37 @@ Output: Return ONLY a JSON array or [] for unrecognizable input.`,
     ]);
   };
 
+  const deleteAllEverything = async () => {
+    Alert.alert(
+      t('deleteAllEverything'),
+      t('deleteAllEverythingConfirm'),
+      [
+        { text: t('cancel'), style: 'cancel' },
+        {
+          text: t('delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+              await Promise.all([
+                AsyncStorage.removeItem(BUDGET_STORAGE_KEY),
+                AsyncStorage.removeItem(SHOPPING_STORAGE_KEY),
+                AsyncStorage.removeItem(WISHLIST_STORAGE_KEY),
+              ]);
+              setEntries([]);
+              cancelEditing();
+              if (onRefreshAll) onRefreshAll();
+              Alert.alert(t('success'), t('allDataCleared'));
+            } catch (e) {
+              console.error('Failed to clear all data', e);
+              Alert.alert(t('error'), t('failedToClearData'));
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderEntry = ({ item }: { item: BudgetEntry }) => {
     const isEditing = item.id === editingId;
     return (
@@ -336,7 +369,12 @@ Output: Return ONLY a JSON array or [] for unrecognizable input.`,
       <View style={styles.header}>
         <Text style={styles.title}>{t('budget')}</Text>
         <View style={styles.headerButtons}>
-          <TouchableOpacity onPress={clearAll} style={styles.clearAllIcon}>
+          <TouchableOpacity 
+            onPress={clearAll} 
+            onLongPress={deleteAllEverything}
+            delayLongPress={2000}
+            style={styles.clearAllIcon}
+          >
             <MaterialIcons name="delete-sweep" size={28} color="#C62828" />
           </TouchableOpacity>
         </View>

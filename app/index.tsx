@@ -102,6 +102,11 @@ export default function Index() {
     setApiKeyModalVisible(true);
   };
 
+  const [refreshKey, setRefreshKey] = useState(0);
+  const handleRefreshAll = () => {
+    setRefreshKey(prev => prev + 1);
+  };
+
   const handleSaveApiKey = async (key: string) => {
     await AsyncStorage.setItem('GEMINI_API_KEY', key);
     setApiKey(key);
@@ -278,15 +283,27 @@ export default function Index() {
       </View>
       {activeScreen === "shoppingList" ? (
         <ShoppingList
+          key={`shopping-${refreshKey}`}
           selectedModel={selectedModel}
           autoHideWishlistOnAdd={autoHideWishlistOnAdd}
           budgetEnabled={budgetEnabled}
           onRequireApiKey={requireApiKey}
+          onRefreshAll={handleRefreshAll}
         />
       ) : activeScreen === "wishlist" ? (
-        <Wishlist selectedModel={selectedModel} onRequireApiKey={requireApiKey} />
+        <Wishlist 
+          key={`wishlist-${refreshKey}`}
+          selectedModel={selectedModel} 
+          onRequireApiKey={requireApiKey} 
+          onRefreshAll={handleRefreshAll}
+        />
       ) : activeScreen === "budget" ? (
-        <Budget selectedModel={selectedModel} onRequireApiKey={requireApiKey} />
+        <Budget 
+          key={`budget-${refreshKey}`}
+          selectedModel={selectedModel} 
+          onRequireApiKey={requireApiKey} 
+          onRefreshAll={handleRefreshAll}
+        />
       ) : LLM_CHAT_ENABLED ? (
         <LLMChat selectedModel={selectedModel} onRequireApiKey={requireApiKey} />
       ) : null}

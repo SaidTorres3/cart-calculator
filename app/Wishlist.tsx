@@ -30,13 +30,16 @@ interface Item {
 }
 
 const STORAGE_KEY = "WISHLIST_ITEMS";
+const SHOPPING_STORAGE_KEY = "SHOPPING_ITEMS";
+const BUDGET_STORAGE_KEY = "BUDGET_ENTRIES";
 
 interface WishlistProps {
   selectedModel: string;
   onRequireApiKey: () => void;
+  onRefreshAll?: () => void;
 }
 
-const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) => {
+const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey, onRefreshAll }) => {
   const [items, setItems] = useState<Item[]>([]);
   const [product, setProduct] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -358,6 +361,36 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
     );
   };
 
+  const deleteAllEverything = async () => {
+    Alert.alert(
+      t('deleteAllEverything'),
+      t('deleteAllEverythingConfirm'),
+      [
+        { text: t('cancel'), style: 'cancel' },
+        {
+          text: t('delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+              await Promise.all([
+                AsyncStorage.removeItem(STORAGE_KEY),
+                AsyncStorage.removeItem(SHOPPING_STORAGE_KEY),
+                AsyncStorage.removeItem(BUDGET_STORAGE_KEY),
+              ]);
+              setItems([]);
+              if (onRefreshAll) onRefreshAll();
+              Alert.alert(t('success'), t('allDataCleared'));
+            } catch (e) {
+              console.error('Failed to clear all data', e);
+              Alert.alert(t('error'), t('failedToClearData'));
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderItem = ({ item }: { item: Item }) => {
     const isEditing = item.id === editingId;
     const animatedBorderColor = rainbowAnim.interpolate({
@@ -437,7 +470,12 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey }) =
       >
         <Text style={styles.title}>{t('wishlist')}</Text>
         <View style={styles.headerButtons}>
-          <TouchableOpacity onPress={clearAllItems} style={styles.clearAllIcon}>
+          <TouchableOpacity 
+            onPress={clearAllItems} 
+            onLongPress={deleteAllEverything}
+            delayLongPress={2000}
+            style={styles.clearAllIcon}
+          >
             <MaterialIcons name="delete-sweep" size={28} color="#C62828" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.collapseButton}>

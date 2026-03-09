@@ -51,5 +51,10 @@
   "deleteBudgetEntry": "Eliminar entrada",
   "deleteBudgetEntryMessage": "¿Seguro que quieres eliminar esta entrada del presupuesto?",
   "clearAllBudgetEntries": "Borrar todas las entradas",
-  "clearAllBudgetConfirm": "¿Seguro que quieres eliminar todas las entradas del presupuesto?"
+  "clearAllBudgetConfirm": "¿Seguro que quieres eliminar todas las entradas del presupuesto?",
+  "deleteAllEverything": "Borrar TODO",
+  "deleteAllEverythingConfirm": "¿Estás seguro de que quieres borrar todos los artículos de la Lista de Compras, Lista de Deseos y Presupuesto?",
+  "success": "Éxito",
+  "allDataCleared": "Todos los datos han sido borrados.",
+  "failedToClearData": "Error al borrar los datos."
 }

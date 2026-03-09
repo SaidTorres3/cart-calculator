@@ -51,5 +51,10 @@
   "deleteBudgetEntry": "Eintrag löschen",
   "deleteBudgetEntryMessage": "Möchten Sie diesen Budgeteintrag wirklich löschen?",
   "clearAllBudgetEntries": "Alle Einträge löschen",
-  "clearAllBudgetConfirm": "Möchten Sie wirklich alle Budgeteinträge entfernen?"
+  "clearAllBudgetConfirm": "Möchten Sie wirklich alle Budgeteinträge entfernen?",
+  "deleteAllEverything": "ALLES löschen",
+  "deleteAllEverythingConfirm": "Sind Sie sicher, dass Sie alle Artikel aus Einkaufsliste, Wunschliste und Budget löschen möchten?",
+  "success": "Erfolg",
+  "allDataCleared": "Alle Daten wurden gelöscht.",
+  "failedToClearData": "Fehler beim Löschen der Daten."
 }

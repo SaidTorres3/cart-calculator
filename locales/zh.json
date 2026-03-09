@@ -51,5 +51,10 @@
   "deleteBudgetEntry": "删除条目",
   "deleteBudgetEntryMessage": "确定要删除此预算条目吗？",
   "clearAllBudgetEntries": "清除所有条目",
-  "clearAllBudgetConfirm": "确定要删除所有预算条目吗？"
+  "clearAllBudgetConfirm": "确定要删除所有预算条目吗？",
+  "deleteAllEverything": "删除全部数据",
+  "deleteAllEverythingConfirm": "您确定要删除购物清单、心愿单和预算中的所有项目吗？",
+  "success": "成功",
+  "allDataCleared": "所有数据已清除。",
+  "failedToClearData": "清除数据失败。"
 }

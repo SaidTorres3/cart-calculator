@@ -51,5 +51,10 @@
   "deleteBudgetEntry": "Delete Entry",
   "deleteBudgetEntryMessage": "Are you sure you want to delete this budget entry?",
   "clearAllBudgetEntries": "Clear All Budget Entries",
-  "clearAllBudgetConfirm": "Are you sure you want to remove all budget entries?"
+  "clearAllBudgetConfirm": "Are you sure you want to remove all budget entries?",
+  "deleteAllEverything": "Delete EVERYTHING",
+  "deleteAllEverythingConfirm": "Are you sure you want to delete all items from Shopping List, Wishlist, and Budget?",
+  "success": "Success",
+  "allDataCleared": "All data has been cleared.",
+  "failedToClearData": "Failed to clear data."
 }

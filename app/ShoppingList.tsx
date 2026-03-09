@@ -36,12 +36,14 @@ interface Item {
 
 const STORAGE_KEY = "SHOPPING_ITEMS";
 const WISHLIST_KEY = "WISHLIST_ITEMS";
+const BUDGET_KEY = "BUDGET_ENTRIES";
 
 interface ShoppingListProps {
   selectedModel: string;
   autoHideWishlistOnAdd: boolean;
   budgetEnabled: boolean;
   onRequireApiKey: () => void;
+  onRefreshAll?: () => void;
 }
 
 const ShoppingList: React.FC<ShoppingListProps> = ({
@@ -49,6 +51,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
   autoHideWishlistOnAdd,
   budgetEnabled,
   onRequireApiKey,
+  onRefreshAll,
 }) => {
   const [items, setItems] = useState<Item[]>([]);
   const [budgetTotal, setBudgetTotal] = useState(0);
@@ -532,6 +535,36 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
     );
   };
 
+  const deleteAllEverything = async () => {
+    Alert.alert(
+      t('deleteAllEverything'),
+      t('deleteAllEverythingConfirm'),
+      [
+        { text: t('cancel'), style: 'cancel' },
+        {
+          text: t('delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+              await Promise.all([
+                AsyncStorage.removeItem(STORAGE_KEY),
+                AsyncStorage.removeItem(WISHLIST_KEY),
+                AsyncStorage.removeItem(BUDGET_KEY),
+              ]);
+              setItems([]);
+              if (onRefreshAll) onRefreshAll();
+              Alert.alert(t('success'), t('allDataCleared'));
+            } catch (e) {
+              console.error('Failed to clear all data', e);
+              Alert.alert(t('error'), t('failedToClearData'));
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderItem = ({ item }: { item: Item }) => {
     const isEditing = item.id === editingId;
     const animatedBorderColor = rainbowAnim.interpolate({
@@ -658,7 +691,12 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
       >
         <Text style={styles.title}>Cart Calculator</Text>
         <View style={styles.headerButtons}>
-          <TouchableOpacity onPress={clearAllItems} style={styles.clearAllIcon}>
+          <TouchableOpacity 
+            onPress={clearAllItems} 
+            onLongPress={deleteAllEverything}
+            delayLongPress={2000}
+            style={styles.clearAllIcon}
+          >
             <MaterialIcons name="delete-sweep" size={28} color="#C62828" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.collapseButton}>

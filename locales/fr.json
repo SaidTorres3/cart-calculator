@@ -51,5 +51,10 @@
   "deleteBudgetEntry": "Supprimer l'entrée",
   "deleteBudgetEntryMessage": "Êtes-vous sûr de vouloir supprimer cette entrée de budget ?",
   "clearAllBudgetEntries": "Supprimer toutes les entrées",
-  "clearAllBudgetConfirm": "Êtes-vous sûr de vouloir supprimer toutes les entrées de budget ?"
+  "clearAllBudgetConfirm": "Êtes-vous sûr de vouloir supprimer toutes les entrées de budget ?",
+  "deleteAllEverything": "TOUT supprimer",
+  "deleteAllEverythingConfirm": "Voulez-vous vraiment supprimer tous les articles de la liste de courses, de la liste de souhaits et du budget ?",
+  "success": "Succès",
+  "allDataCleared": "Toutes les données ont été effacées.",
+  "failedToClearData": "Échec de l'effacement des données."
 }
