@@ -214,67 +214,78 @@ export default function Index() {
   return (
     <SafeAreaView style={styles.container} {...panResponder.panHandlers}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPressIn={hideKeyboard}
-          onPress={() => setActiveScreen("shoppingList")}
-        >
-          <Text
-            style={
-              activeScreen === "shoppingList"
-                ? styles.activeHeaderText
-                : styles.inactiveHeaderText
-            }
-          >
-            {t('shoppingList')}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPressIn={hideKeyboard}
-          onPress={() => setActiveScreen("wishlist")}
-        >
-          <Text
-            style={
-              activeScreen === "wishlist"
-                ? styles.activeHeaderText
-                : styles.inactiveHeaderText
-            }
-          >
-            {t('wishlist')}
-          </Text>
-        </TouchableOpacity>
-        {budgetEnabled && (
+        <View style={styles.headerTabsContainer}>
           <TouchableOpacity
+            style={styles.headerTab}
             onPressIn={hideKeyboard}
-            onPress={() => setActiveScreen("budget")}
+            onPress={() => setActiveScreen("shoppingList")}
           >
             <Text
               style={
-                activeScreen === "budget"
+                activeScreen === "shoppingList"
                   ? styles.activeHeaderText
                   : styles.inactiveHeaderText
               }
+              numberOfLines={1}
             >
-              {t('budget')}
+              {t('shoppingList')}
             </Text>
           </TouchableOpacity>
-        )}
-        {LLM_CHAT_ENABLED && (
           <TouchableOpacity
+            style={styles.headerTab}
             onPressIn={hideKeyboard}
-            onPress={() => setActiveScreen("llmChat")}
+            onPress={() => setActiveScreen("wishlist")}
           >
             <Text
               style={
-                activeScreen === "llmChat"
+                activeScreen === "wishlist"
                   ? styles.activeHeaderText
                   : styles.inactiveHeaderText
               }
+              numberOfLines={1}
             >
-              {t('llmChat')}
+              {t('wishlist')}
             </Text>
           </TouchableOpacity>
-        )}
+          {budgetEnabled && (
+            <TouchableOpacity
+              style={styles.headerTab}
+              onPressIn={hideKeyboard}
+              onPress={() => setActiveScreen("budget")}
+            >
+              <Text
+                style={
+                  activeScreen === "budget"
+                    ? styles.activeHeaderText
+                    : styles.inactiveHeaderText
+                }
+                numberOfLines={1}
+              >
+                {t('budget')}
+              </Text>
+            </TouchableOpacity>
+          )}
+          {LLM_CHAT_ENABLED && (
+            <TouchableOpacity
+              style={styles.headerTab}
+              onPressIn={hideKeyboard}
+              onPress={() => setActiveScreen("llmChat")}
+            >
+              <Text
+                style={
+                  activeScreen === "llmChat"
+                    ? styles.activeHeaderText
+                    : styles.inactiveHeaderText
+                }
+                numberOfLines={1}
+              >
+                {t('llmChat')}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
         <TouchableOpacity
+          style={styles.settingsButton}
           onPressIn={hideKeyboard}
           onPress={() => setConfigVisible(true)}
         >
@@ -345,16 +356,34 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "flex-start",
+    alignItems: "center",
     padding: 10,
+    position: "relative",
+  },
+  headerTabsContainer: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+  },
+  headerTab: {
+    flex: 1,
+    alignItems: "center",
   },
   activeHeaderText: {
     color: "white",
     fontWeight: "bold",
-    fontSize: 18,
+    fontSize: 14,
+    numberOfLines: 1,
   },
   inactiveHeaderText: {
     color: "#aaa",
-    fontSize: 18,
+    fontSize: 14,
+    numberOfLines: 1,
+  },
+  settingsButton: {
+    padding: 8,
+    marginLeft: 10,
   },
 });

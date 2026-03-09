@@ -38,6 +38,7 @@ const LANGUAGES = [
   { label: 'Français', value: 'fr' },
   { label: 'Deutsch', value: 'de' },
   { label: '中文', value: 'zh' },
+  { label: '日本語', value: 'ja' },
 ];
 
 const SettingsModal: React.FC<SettingsModalProps> = ({

@@ -7,17 +7,19 @@ import es from './locales/es.json';
 import fr from './locales/fr.json';
 import de from './locales/de.json';
 import zh from './locales/zh.json';
+import ja from './locales/ja.json';
 
-const locale = Localization.locale || 'en';
+const locale = Localization.getLocales()[0]?.languageCode || 'en';
 
 i18n.use(initReactI18next).init({
-  compatibilityJSON: 'v3',
+  compatibilityJSON: 'v4',
   resources: {
     en: { translation: en },
     es: { translation: es },
     fr: { translation: fr },
     de: { translation: de },
-    zh: { translation: zh }
+    zh: { translation: zh },
+    ja: { translation: ja }
   },
   lng: locale.split('-')[0],
   fallbackLng: 'en',

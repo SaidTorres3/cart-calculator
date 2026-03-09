@@ -367,7 +367,7 @@ Output: Return ONLY a JSON array or [] for unrecognizable input.`,
       keyboardVerticalOffset={0}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>{t('budget')}</Text>
+        <Text style={styles.title} numberOfLines={1}>{t('budget')}</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity 
             onPress={clearAll} 
@@ -495,10 +495,11 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   title: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
+    flex: 1,
   },
   headerButtons: {
     position: 'absolute',

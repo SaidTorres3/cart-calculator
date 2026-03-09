@@ -689,7 +689,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
         style={styles.header}
         onPress={() => setIsFormVisible(!isFormVisible)}
       >
-        <Text style={styles.title}>Cart Calculator</Text>
+        <Text style={styles.title} numberOfLines={1}>Cart Calculator</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity 
             onPress={clearAllItems} 
@@ -850,10 +850,11 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   title: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "bold",
     color: "#fff",
     textAlign: "center",
+    flex: 1,
   },
   headerButtons: {
     position: "absolute",
