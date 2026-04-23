@@ -39,5 +39,13 @@ yarn-error.*
 
 app-example
 
-# prebuild
-android
+# Android build artifacts (keep sources tracked)
+android/build/
+android/.gradle/
+android/.kotlin/
+android/app/build/
+android/app/.cxx/
+android/wear/build/
+android/local.properties
+android/**/*.iml
+android/**/*.hprof

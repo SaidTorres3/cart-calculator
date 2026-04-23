@@ -23,6 +23,7 @@ import { getApiKey } from "../config";
 import { GoogleGenAI } from "@google/genai";
 import { supportsThinkingConfig } from "../utils/aiUtils";
 import { useTranslation } from 'react-i18next';
+import { syncCartToWatch } from '../utils/wearSync';
 
 interface Item {
   id: string;
@@ -205,11 +206,14 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
     }
   }, [items]);
 
-  // Save data to AsyncStorage whenever 'items' changes
+  // Save data to AsyncStorage and sync to WearOS whenever 'items' changes
   useEffect(() => {
     const saveData = async () => {
       try {
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+        const json = JSON.stringify(items);
+        await AsyncStorage.setItem(STORAGE_KEY, json);
+        // Sync to watch (fire-and-forget, non-fatal)
+        syncCartToWatch(json);
       } catch (error) {
         console.error("Failed to save data to AsyncStorage", error);
       }
