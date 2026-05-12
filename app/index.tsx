@@ -24,6 +24,7 @@ import SettingsModal from "./SettingsModal";
 import ApiKeyModal from "./ApiKeyModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiKey, LLM_CHAT_ENABLED, initApiKey, clearApiKey, setApiKey } from "../config";
+import { syncToWear } from "../utils/wearSync";
 import { useTranslation } from 'react-i18next';
 
 // Keep the splash screen visible while we fetch resources
@@ -79,6 +80,7 @@ export default function Index() {
   const handleSelectModel = async (model: string) => {
     setSelectedModel(model);
     await AsyncStorage.setItem('SELECTED_MODEL', model);
+    syncToWear({ model });
   };
 
   const toggleAutoHide = async () => {
@@ -112,6 +114,7 @@ export default function Index() {
     setApiKey(key);
     setApiKeyError(false);
     setApiKeyModalVisible(false);
+    syncToWear({ apiKey: key });
   };
 
   const requireApiKey = () => {
