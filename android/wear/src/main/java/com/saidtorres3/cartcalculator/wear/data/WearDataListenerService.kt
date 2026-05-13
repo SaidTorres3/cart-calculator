@@ -39,7 +39,10 @@ class WearDataListenerService : WearableListenerService() {
             when (path) {
                 DataRepository.PATH_SYNC -> {
                     val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
-                    Log.d(TAG, "Received /sync: cart=${dataMap.getString("cart")?.length ?: 0} chars")
+                    val cart = dataMap.getString("cart") ?: ""
+                    val apiKey = dataMap.getString("apiKey") ?: ""
+                    val model = dataMap.getString("model") ?: ""
+                    Log.d(TAG, "Received /sync: cart=${cart.length} chars, apiKey=${if (apiKey.isNotEmpty()) "SET (${apiKey.length} chars)" else "EMPTY"}, model=$model")
                     scope.launch {
                         repository.updateFromSyncData(dataMap)
                     }

@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.os.Build
 import android.util.Base64
+import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -37,11 +38,11 @@ class MainViewModel(
     val wishlistItems: StateFlow<List<WishlistItem>> = repository.wishlistItems
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val apiKey: StateFlow<String> = repository.apiKey
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+    val apiKey: StateFlow<String> = repository.apiKeyFlow
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
     val selectedModel: StateFlow<String> = repository.selectedModel
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "gemini-2.5-flash-lite")
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "gemini-2.5-flash-lite")
 
     private val _activeScreen = MutableStateFlow(ActiveScreen.CART)
     val activeScreen: StateFlow<ActiveScreen> = _activeScreen.asStateFlow()

@@ -112,18 +112,19 @@ class WearSyncModule(private val reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun syncData(cartJson: String, wishlistJson: String, apiKey: String, model: String) {
-        Log.d(TAG, "syncData called: cart=${cartJson.length} chars, apiKey=${if (apiKey.isNotEmpty()) "set" else "empty"}")
+        Log.e(TAG, "syncData called: cart=${cartJson.length} chars, apiKey=${if (apiKey.isNotEmpty()) "SET (${apiKey.length} chars)" else "EMPTY"}")
         val context: Context = reactContext.applicationContext
 
         // Mirror data into SharedPreferences so WearDataListenerService can
         // respond to /request_sync even when the RN JS runtime is not running.
         val prefs = context.getSharedPreferences(WearDataListenerService.PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().apply {
-            if (cartJson.isNotEmpty()) putString(WearDataListenerService.KEY_CART, cartJson)
-            if (wishlistJson.isNotEmpty()) putString(WearDataListenerService.KEY_WISHLIST, wishlistJson)
-            if (apiKey.isNotEmpty()) putString(WearDataListenerService.KEY_API_KEY, apiKey)
-            if (model.isNotEmpty()) putString(WearDataListenerService.KEY_MODEL, model)
-        }.apply()
+        prefs.edit().also {
+            it.putString(WearDataListenerService.KEY_CART, cartJson)
+            it.putString(WearDataListenerService.KEY_WISHLIST, wishlistJson)
+            it.putString(WearDataListenerService.KEY_API_KEY, apiKey)
+            it.putString(WearDataListenerService.KEY_MODEL, model)
+            it.apply()
+        }
 
         try {
             val request = PutDataMapRequest.create(PATH_SYNC).apply {

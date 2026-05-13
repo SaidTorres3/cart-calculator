@@ -39,6 +39,10 @@ class DataRepository(private val context: Context) {
         const val PATH_UPDATE_WISHLIST = "/update_wishlist"
     }
 
+    init {
+        Log.d("DataRepository", "Initialized with context: $context")
+    }
+
     val cartItems: Flow<List<CartItem>> = context.dataStore.data.map { prefs ->
         cartItemsFromJson(prefs[KEY_CART] ?: "")
     }
@@ -47,7 +51,7 @@ class DataRepository(private val context: Context) {
         wishlistItemsFromJson(prefs[KEY_WISHLIST] ?: "")
     }
 
-    val apiKey: Flow<String> = context.dataStore.data.map { prefs ->
+    val apiKeyFlow: Flow<String> = context.dataStore.data.map { prefs ->
         prefs[KEY_API_KEY] ?: ""
     }
 
@@ -57,14 +61,15 @@ class DataRepository(private val context: Context) {
 
     suspend fun updateFromSyncData(dataMap: DataMap) {
         val cart = dataMap.getString("cart") ?: ""
+        val wishlist = dataMap.getString("wishlist") ?: ""
         val apiKey = dataMap.getString("apiKey") ?: ""
         val model = dataMap.getString("model") ?: ""
-        Log.d("DataRepository", "updateFromSyncData: cart=${cart.length} chars, apiKey=${if (apiKey.isNotEmpty()) "set (${apiKey.length} chars)" else "EMPTY"}, model=${model.ifEmpty { "empty" }}")
+        Log.d("DataRepository", "updateFromSyncData: cart=${cart.length} chars, wishlist=${wishlist.length} chars, apiKey=${if (apiKey.isNotEmpty()) "SET" else "EMPTY"}, model=$model")
         context.dataStore.edit { prefs ->
-            dataMap.getString("cart")?.let { prefs[KEY_CART] = it }
-            dataMap.getString("wishlist")?.let { prefs[KEY_WISHLIST] = it }
-            dataMap.getString("apiKey")?.let { if (it.isNotEmpty()) prefs[KEY_API_KEY] = it }
-            dataMap.getString("model")?.let { if (it.isNotEmpty()) prefs[KEY_MODEL] = it }
+            prefs[KEY_CART] = cart
+            prefs[KEY_WISHLIST] = wishlist
+            prefs[KEY_API_KEY] = apiKey
+            prefs[KEY_MODEL] = model
         }
     }
 

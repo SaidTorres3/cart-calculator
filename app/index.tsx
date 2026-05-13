@@ -155,18 +155,22 @@ export default function Index() {
   useEffect(() => {
     async function prepare() {
       try {
-        // Add any initialization logic here if needed
+        console.log("[Index] prepare start");
         await initApiKey();
+        console.log("[Index] initApiKey done");
         if (!getApiKey()) {
+          console.log("[Index] No API key found, showing modal");
           setApiKeyModalVisible(true);
         }
-        await new Promise((resolve) => setTimeout(resolve, 100)); // Small delay to ensure proper initialization
-        // Push all current data to the watch on startup so it's always up to date
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        console.log("[Index] setTimeout done");
         syncToWear();
+        console.log("[Index] syncToWear triggered");
       } catch (e) {
-        console.warn(e);
+        console.warn("[Index] prepare error:", e);
         setError(e as Error);
       } finally {
+        console.log("[Index] prepare finally, setting isReady=true and hiding splash");
         setIsReady(true);
         await SplashScreen.hideAsync();
       }

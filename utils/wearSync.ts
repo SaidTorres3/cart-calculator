@@ -20,6 +20,7 @@ function getWearSync() {
 const STORAGE_KEY_CART = 'SHOPPING_ITEMS';
 const STORAGE_KEY_WISHLIST = 'WISHLIST_ITEMS';
 const STORAGE_KEY_MODEL = 'SELECTED_MODEL';
+const STORAGE_KEY_API_KEY = 'GEMINI_API_KEY';
 const PREFS_NAME_WEAR = 'WearSyncPrefs';  // mirrors WearDataListenerService.PREFS_NAME
 
 /**
@@ -41,7 +42,7 @@ export async function syncToWear(opts?: {
   }
 
   try {
-    const [cartRaw, wishlistRaw, modelRaw] = await Promise.all([
+    const [cartRaw, wishlistRaw, modelRaw, apiKeyRaw] = await Promise.all([
       opts?.cartJson !== undefined
         ? Promise.resolve(opts.cartJson)
         : AsyncStorage.getItem(STORAGE_KEY_CART).then((v) => v ?? '[]'),
@@ -51,11 +52,13 @@ export async function syncToWear(opts?: {
       opts?.model !== undefined
         ? Promise.resolve(opts.model)
         : AsyncStorage.getItem(STORAGE_KEY_MODEL).then((v) => v ?? ''),
+      opts?.apiKey !== undefined
+        ? Promise.resolve(opts.apiKey)
+        : AsyncStorage.getItem(STORAGE_KEY_API_KEY).then((v) => v ?? getApiKey() ?? ''),
     ]);
 
-    const apiKey = opts?.apiKey ?? getApiKey() ?? '';
-
-    WearSync.syncData(cartRaw, wishlistRaw, apiKey, modelRaw);
+    console.log('[WearSync] syncData: cart=' + cartRaw.length + ', apiKey=' + (apiKeyRaw ? 'SET' : 'EMPTY') + ', model=' + modelRaw);
+    WearSync.syncData(cartRaw, wishlistRaw, apiKeyRaw, modelRaw);
   } catch (e) {
     // Non-critical: WearOS sync failures should not disrupt the main app.
     console.warn('[WearSync] sync failed:', e);
