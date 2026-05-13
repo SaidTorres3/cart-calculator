@@ -12,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -31,6 +32,8 @@ import androidx.wear.compose.material.PageIndicatorState
 import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
+import androidx.wear.compose.material.Vignette
+import androidx.wear.compose.material.VignettePosition
 import com.saidtorres3.cartcalculator.wear.data.DataRepository
 import com.saidtorres3.cartcalculator.wear.ui.CartScreen
 import com.saidtorres3.cartcalculator.wear.ui.WishlistScreen
@@ -88,6 +91,9 @@ private fun WearAppContent(viewModel: MainViewModel) {
             timeText = { TimeText(modifier = Modifier.padding(top = 4.dp)) },
             pageIndicator = {
                 HorizontalPageIndicator(pageIndicatorState = pageIndicatorState)
+            },
+            vignette = {
+                Vignette(vignettePosition = VignettePosition.TopAndBottom)
             }
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
@@ -120,19 +126,20 @@ private fun WearAppContent(viewModel: MainViewModel) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.75f))
+                            .background(Color.Black.copy(alpha = 0.85f))
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
-                            ) { viewModel.clearError() },
+                            ) { viewModel.clearError() }
+                            .padding(24.dp), // Increased padding for circular screens
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = msg,
                             color = Color.White,
-                            fontSize = 12.sp,
+                            fontSize = 13.sp,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(16.dp)
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }

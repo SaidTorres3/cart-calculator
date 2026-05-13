@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.wear.compose.material.AutoCenteringParams
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
@@ -49,27 +50,32 @@ fun CartScreen(
 ) {
     val listState = rememberScalingLazyListState()
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    ScalingLazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        autoCentering = AutoCenteringParams(itemIndex = 0)
+    ) {
         // Header row with title + mic button
-        CartHeader(isRecording = isRecording, isProcessing = isProcessing, onMicClick = onMicClick)
+        item {
+            CartHeader(
+                isRecording = isRecording,
+                isProcessing = isProcessing,
+                onMicClick = onMicClick
+            )
+        }
 
         // Items list
         if (items.isEmpty()) {
-            EmptyState(message = "Cart is empty\nTap mic to add items")
+            item {
+                EmptyState(message = "Cart is empty\nTap mic to add items")
+            }
         } else {
-            ScalingLazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 8.dp)
-            ) {
-                items(items) { item ->
-                    CartItemRow(
-                        item = item,
-                        onToggleVisibility = { onToggleVisibility(item.id) },
-                        onRemove = { onRemove(item.id) }
-                    )
-                }
+            items(items) { item ->
+                CartItemRow(
+                    item = item,
+                    onToggleVisibility = { onToggleVisibility(item.id) },
+                    onRemove = { onRemove(item.id) }
+                )
             }
         }
     }
@@ -84,7 +90,7 @@ private fun CartHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 24.dp, start = 8.dp, end = 8.dp, bottom = 4.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -115,7 +121,7 @@ private fun CartItemRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 3.dp),
+            .padding(vertical = 3.dp, horizontal = 14.dp), // Added horizontal padding
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {

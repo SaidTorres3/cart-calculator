@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.wear.compose.material.AutoCenteringParams
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Icon
@@ -42,31 +43,32 @@ fun WishlistScreen(
 ) {
     val listState = rememberScalingLazyListState()
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    ScalingLazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        autoCentering = AutoCenteringParams(itemIndex = 0)
+    ) {
         // Header row with title + mic button
-        WishlistHeader(
-            isRecording = isRecording,
-            isProcessing = isProcessing,
-            onMicClick = onMicClick
-        )
+        item {
+            WishlistHeader(
+                isRecording = isRecording,
+                isProcessing = isProcessing,
+                onMicClick = onMicClick
+            )
+        }
 
         // Items list
         if (items.isEmpty()) {
-            EmptyState(message = "Wishlist is empty\nTap mic to add items")
+            item {
+                EmptyState(message = "Wishlist is empty\nTap mic to add items")
+            }
         } else {
-            ScalingLazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 8.dp)
-            ) {
-                items(items) { item ->
-                    WishlistItemRow(
-                        item = item,
-                        onToggleVisibility = { onToggleVisibility(item.id) },
-                        onRemove = { onRemove(item.id) }
-                    )
-                }
+            items(items) { item ->
+                WishlistItemRow(
+                    item = item,
+                    onToggleVisibility = { onToggleVisibility(item.id) },
+                    onRemove = { onRemove(item.id) }
+                )
             }
         }
     }
@@ -81,7 +83,7 @@ private fun WishlistHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 24.dp, start = 8.dp, end = 8.dp, bottom = 4.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -112,7 +114,7 @@ private fun WishlistItemRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 3.dp),
+            .padding(vertical = 3.dp, horizontal = 14.dp), // Added horizontal padding
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
