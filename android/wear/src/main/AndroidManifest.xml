@@ -13,7 +13,7 @@
 
         android:theme="@android:style/Theme.DeviceDefault">
 
-        <uses-library android:name="com.google.android.wearable" android:required="true" />
+        <uses-library android:name="com.google.android.wearable" android:required="false" />
 
         <!-- Main WearOS Activity -->
         <activity

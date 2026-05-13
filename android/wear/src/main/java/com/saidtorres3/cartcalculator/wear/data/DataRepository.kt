@@ -56,6 +56,10 @@ class DataRepository(private val context: Context) {
     }
 
     suspend fun updateFromSyncData(dataMap: DataMap) {
+        val cart = dataMap.getString("cart") ?: ""
+        val apiKey = dataMap.getString("apiKey") ?: ""
+        val model = dataMap.getString("model") ?: ""
+        Log.d("DataRepository", "updateFromSyncData: cart=${cart.length} chars, apiKey=${if (apiKey.isNotEmpty()) "set (${apiKey.length} chars)" else "EMPTY"}, model=${model.ifEmpty { "empty" }}")
         context.dataStore.edit { prefs ->
             dataMap.getString("cart")?.let { prefs[KEY_CART] = it }
             dataMap.getString("wishlist")?.let { prefs[KEY_WISHLIST] = it }

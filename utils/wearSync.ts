@@ -12,7 +12,10 @@ import { NativeModules, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApiKey } from '../config';
 
-const { WearSync } = NativeModules;
+// Access lazily so New Architecture TurboModules initialisation is complete
+function getWearSync() {
+  return NativeModules.WearSync ?? null;
+}
 
 const STORAGE_KEY_CART = 'SHOPPING_ITEMS';
 const STORAGE_KEY_WISHLIST = 'WISHLIST_ITEMS';
@@ -31,7 +34,11 @@ export async function syncToWear(opts?: {
   apiKey?: string;
   model?: string;
 }): Promise<void> {
-  if (Platform.OS !== 'android' || !WearSync) return;
+  const WearSync = getWearSync();
+  if (Platform.OS !== 'android' || !WearSync) {
+    console.warn('[WearSync] Not available: OS=' + Platform.OS + ', WearSync=' + WearSync);
+    return;
+  }
 
   try {
     const [cartRaw, wishlistRaw, modelRaw] = await Promise.all([
@@ -61,6 +68,7 @@ export async function syncToWear(opts?: {
  * Call this when the app comes to foreground.
  */
 export async function getWatchUpdates(): Promise<{ cart: string | null; wishlist: string | null }> {
+  const WearSync = getWearSync();
   if (Platform.OS !== 'android' || !WearSync?.getWatchUpdates) return { cart: null, wishlist: null };
   try {
     return await WearSync.getWatchUpdates();

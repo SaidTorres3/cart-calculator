@@ -12,6 +12,7 @@ import {
   Keyboard,
   AppState,
   TextInput,
+  DeviceEventEmitter,
 } from "react-native";
 import ShoppingList from "./ShoppingList";
 import Wishlist from "./Wishlist";
@@ -172,6 +173,27 @@ export default function Index() {
     }
 
     prepare();
+  }, []);
+
+  // Real-time listener: watch pushed cart/wishlist changes while phone is in foreground
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = DeviceEventEmitter.addListener(
+      'WearDataUpdated',
+      async (event: { type: string; data: string }) => {
+        try {
+          if (event.type === 'cart') {
+            await AsyncStorage.setItem('SHOPPING_ITEMS', event.data);
+          } else if (event.type === 'wishlist') {
+            await AsyncStorage.setItem('WISHLIST_ITEMS', event.data);
+          }
+          setRefreshKey(prev => prev + 1);
+        } catch {
+          // Non-critical
+        }
+      }
+    );
+    return () => sub.remove();
   }, []);
 
   useEffect(() => {

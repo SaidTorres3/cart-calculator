@@ -85,6 +85,7 @@ class WearDataListenerService : WearableListenerService() {
             val wishlist = prefs.getString(KEY_WISHLIST, "[]") ?: "[]"
             val apiKey = prefs.getString(KEY_API_KEY, "") ?: ""
             val model = prefs.getString(KEY_MODEL, "") ?: ""
+            Log.d(TAG, "pushSyncToWatch: cart=${cart.length} chars, apiKey=${if (apiKey.isNotEmpty()) "set (${apiKey.length} chars)" else "EMPTY"}")
 
             val request = PutDataMapRequest.create(WearSyncModule.PATH_SYNC).apply {
                 dataMap.putString("cart", cart)
