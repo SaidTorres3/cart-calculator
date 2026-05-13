@@ -1,5 +1,8 @@
 package com.saidtorres3.cartcalculator.wear.ui
 
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,10 +12,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,21 +41,40 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Delete
+import kotlinx.coroutines.launch
 
 @Composable
 fun WishlistScreen(
     items: List<WishlistItem>,
     isRecording: Boolean,
     isProcessing: Boolean,
+    focused: Boolean,
     onMicClick: () -> Unit,
     onToggleVisibility: (String) -> Unit,
     onRemove: (String) -> Unit
 ) {
     val listState = rememberScalingLazyListState()
+    val focusRequester = remember { FocusRequester() }
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(focused) {
+        if (focused) {
+            focusRequester.requestFocus()
+        }
+    }
 
     ScalingLazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .onRotaryScrollEvent {
+                coroutineScope.launch {
+                    listState.scrollBy(it.verticalScrollPixels)
+                }
+                true
+            }
+            .focusRequester(focusRequester)
+            .focusable(),
         autoCentering = AutoCenteringParams(itemIndex = 0)
     ) {
         // Header row with title + mic button

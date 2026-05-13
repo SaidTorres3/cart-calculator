@@ -106,6 +106,7 @@ private fun WearAppContent(viewModel: MainViewModel) {
                             items = cartItems,
                             isRecording = isRecordingCart,
                             isProcessing = isProcessingCart,
+                            focused = pagerState.currentPage == 0,
                             onMicClick = { viewModel.toggleCartRecording() },
                             onToggleVisibility = { viewModel.toggleCartItemVisibility(it) },
                             onRemove = { viewModel.removeCartItem(it) }
@@ -114,6 +115,7 @@ private fun WearAppContent(viewModel: MainViewModel) {
                             items = wishlistItems,
                             isRecording = isRecordingWishlist,
                             isProcessing = isProcessingWishlist,
+                            focused = pagerState.currentPage == 1,
                             onMicClick = { viewModel.toggleWishlistRecording() },
                             onToggleVisibility = { viewModel.toggleWishlistItemVisibility(it) },
                             onRemove = { viewModel.removeWishlistItem(it) }
