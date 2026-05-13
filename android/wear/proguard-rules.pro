@@ -1,0 +1,1 @@
+-keep class com.saidtorres3.cartcalculator.wear.** { *; }

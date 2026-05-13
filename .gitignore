@@ -38,6 +38,4 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
-
-# prebuild
-android
+debug.keystore

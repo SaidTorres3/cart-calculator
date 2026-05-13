@@ -24,7 +24,7 @@ import SettingsModal from "./SettingsModal";
 import ApiKeyModal from "./ApiKeyModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiKey, LLM_CHAT_ENABLED, initApiKey, clearApiKey, setApiKey } from "../config";
-import { syncToWear } from "../utils/wearSync";
+import { syncToWear, getWatchUpdates } from "../utils/wearSync";
 import { useTranslation } from 'react-i18next';
 
 // Keep the splash screen visible while we fetch resources
@@ -160,6 +160,8 @@ export default function Index() {
           setApiKeyModalVisible(true);
         }
         await new Promise((resolve) => setTimeout(resolve, 100)); // Small delay to ensure proper initialization
+        // Push all current data to the watch on startup so it's always up to date
+        syncToWear();
       } catch (e) {
         console.warn(e);
         setError(e as Error);
@@ -173,9 +175,26 @@ export default function Index() {
   }, []);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener("change", (state) => {
+    const subscription = AppState.addEventListener("change", async (state) => {
       if (state !== "active") {
         hideKeyboard();
+        return;
+      }
+      // App came to foreground — pick up any edits made on the watch
+      try {
+        const updates = await getWatchUpdates();
+        if (updates.cart !== null) {
+          await AsyncStorage.setItem('SHOPPING_ITEMS', updates.cart);
+        }
+        if (updates.wishlist !== null) {
+          await AsyncStorage.setItem('WISHLIST_ITEMS', updates.wishlist);
+        }
+        if (updates.cart !== null || updates.wishlist !== null) {
+          // Trigger a re-render of the lists
+          setRefreshKey(prev => prev + 1);
+        }
+      } catch {
+        // Non-critical
       }
     });
     return () => subscription.remove();

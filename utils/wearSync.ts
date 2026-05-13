@@ -49,12 +49,22 @@ export async function syncToWear(opts?: {
     const apiKey = opts?.apiKey ?? getApiKey() ?? '';
 
     WearSync.syncData(cartRaw, wishlistRaw, apiKey, modelRaw);
-
-    // Also mirror apiKey and model into WearSyncPrefs via the module
-    // (the phone-side service reads from these prefs for /request_sync)
-    // WearSyncModule.syncData already writes them; nothing extra needed here.
   } catch (e) {
     // Non-critical: WearOS sync failures should not disrupt the main app.
     console.warn('[WearSync] sync failed:', e);
+  }
+}
+
+/**
+ * Reads any cart/wishlist updates written by the watch back to the phone.
+ * Returns null values if no watch updates are available.
+ * Call this when the app comes to foreground.
+ */
+export async function getWatchUpdates(): Promise<{ cart: string | null; wishlist: string | null }> {
+  if (Platform.OS !== 'android' || !WearSync?.getWatchUpdates) return { cart: null, wishlist: null };
+  try {
+    return await WearSync.getWatchUpdates();
+  } catch {
+    return { cart: null, wishlist: null };
   }
 }
