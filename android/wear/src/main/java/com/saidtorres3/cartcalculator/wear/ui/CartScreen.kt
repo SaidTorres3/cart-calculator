@@ -1,5 +1,6 @@
 package com.saidtorres3.cartcalculator.wear.ui
 
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,27 +21,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.wear.compose.material.AutoCenteringParams
+import androidx.wear.compose.foundation.lazy.AutoCenteringParams
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.ScalingLazyListState
+import androidx.wear.compose.foundation.lazy.items
+import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.ScalingLazyColumn
-import androidx.wear.compose.material.ScalingLazyListState
 import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.items
-import androidx.wear.compose.material.rememberScalingLazyListState
 import com.saidtorres3.cartcalculator.wear.model.CartItem
-import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
@@ -49,6 +49,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Delete
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 @Composable
 fun CartScreen(
@@ -63,6 +64,8 @@ fun CartScreen(
     val listState = rememberScalingLazyListState()
     val focusRequester = remember { FocusRequester() }
     val coroutineScope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
+    var totalScroll = remember { 0f }
 
     LaunchedEffect(focused) {
         if (focused) {
@@ -77,6 +80,12 @@ fun CartScreen(
             .onRotaryScrollEvent {
                 coroutineScope.launch {
                     listState.scrollBy(it.verticalScrollPixels)
+                }
+                // Adaptive haptic feedback
+                totalScroll += it.verticalScrollPixels
+                if (abs(totalScroll) > 30f) {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    totalScroll = 0f
                 }
                 true
             }

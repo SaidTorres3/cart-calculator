@@ -9,7 +9,7 @@ android {
     defaultConfig {
         applicationId 'com.saidtorres3.cartcalculator'
         minSdk 30
-        targetSdk rootProject.ext.targetSdkVersion
+        targetSdk 34
         versionCode 1
         versionName "1.0"
     }
