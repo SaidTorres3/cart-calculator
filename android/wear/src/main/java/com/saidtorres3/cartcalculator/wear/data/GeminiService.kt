@@ -40,8 +40,16 @@ class GeminiService {
     """.trimIndent()
 
     private val WISHLIST_EXTRACT_PROMPT = """
-        Extract wish-list items from the audio and return a JSON array of strings,
-        where each string is the product name. Output ONLY a JSON array.
+        Extract shopping items from text and return a JSON array of objects with properties: product (string).
+
+        Examples:
+        "una servilleta" → [{"product":"Servilleta"}]
+        "2 desodorantes" → [{"product":"2 Desodorantes"}]
+        "3 bolsas de leche" → [{"product":"3 Bolsas de Leche"}]
+        "Tomates" → [{"product":"Tomates"}]
+
+        Output:
+        Return only a JSON array or an empty array ([]) for random text.
     """.trimIndent()
 
     suspend fun extractCartItemsFromAudio(
