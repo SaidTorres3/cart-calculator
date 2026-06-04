@@ -151,7 +151,7 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey, onR
           onRequireApiKey();
           return;
         }
-        const genAI = new GoogleGenAI({ apiKey: getApiKey() });
+        const genAI = new GoogleGenAI({ vertexai: true, apiKey: getApiKey() });
 
         const aiParams: any = {
           model: selectedModel,

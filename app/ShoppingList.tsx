@@ -78,7 +78,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
       return wishlist;
     }
     try {
-      const genAI = new GoogleGenAI({ apiKey: getApiKey() });
+      const genAI = new GoogleGenAI({ vertexai: true, apiKey: getApiKey() });
       const prompt =
         'You will receive a JSON array called WISHLIST and another array NEW_ITEMS. ' +
         'For every entry in NEW_ITEMS, if a semantically equivalent product exists in WISHLIST, ' +
@@ -250,7 +250,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
           onRequireApiKey();
           return;
         }
-        const genAI = new GoogleGenAI({ apiKey: getApiKey() });
+        const genAI = new GoogleGenAI({ vertexai: true, apiKey: getApiKey() });
 
         const aiParams: any = {
           model: selectedModel,

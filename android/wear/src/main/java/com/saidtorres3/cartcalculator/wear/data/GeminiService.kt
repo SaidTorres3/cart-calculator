@@ -22,13 +22,21 @@ class GeminiService {
         .build()
 
     private val CART_EXTRACT_PROMPT = """
-        Extract shopping items from the audio and return a JSON array of objects with properties:
-        product (string), quantity (float), price (float).
+        Extract shopping items from text and return a JSON array of objects with properties: product (string), quantity (float), and price (float).
         Rules:
-        - Product after a number (e.g., "rollo de 100") → interpret as price.
-        - Default: quantity = 1.0, price = 0.0.
-        - Convert grams to kilograms (e.g., "500 gramos" = 0.5).
-        Output ONLY a JSON array or an empty array ([]) for random text.
+        Product after a number (e.g., "rollo de 100") → interpret as price.
+        Default: quantity = 1.0, price = 0.0.
+        Convert grams to kilograms (e.g., "500 gramos" = 0.5).
+
+        Examples:
+        "una servilleta" → [{"product":"Servilleta","quantity":1.0,"price":0.0}]
+        "un rollo de 100" → [{"product":"Rollo","quantity":1.0,"price":100.0}]
+        "2 desodorantes de 45 pesos y uno de 25 pesos" → [{"product":"Desodorante","quantity":2.0,"price":45.0},{"product":"Desodorante","quantity":1.0,"price":25.0}]
+        "3 bolsas de leche 15 pesos" → [{"product":"Leche","quantity":3.0,"price":45.0}]
+        "323 gramos de tomate a 80 el kilo" → [{"product":"Tomate","quantity":0.323,"price":80.0}]
+
+        Output:
+        Return only a JSON array or an empty array ([]) for random text.
     """.trimIndent()
 
     private val WISHLIST_EXTRACT_PROMPT = """
@@ -80,8 +88,18 @@ class GeminiService {
             })
         }.toString()
 
+        val modelPath = if (model.startsWith("publishers/") || model.startsWith("projects/") || model.startsWith("models/")) {
+            model
+        } else if (model.contains("/")) {
+            val parts = model.split("/")
+            "publishers/${parts[0]}/models/${parts[1]}"
+        } else {
+            "publishers/google/models/$model"
+        }
+
         val request = Request.Builder()
-            .url("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey")
+            .url("https://aiplatform.googleapis.com/v1beta1/$modelPath:generateContent")
+            .header("x-goog-api-key", apiKey)
             .post(requestBody.toRequestBody("application/json".toMediaType()))
             .build()
 

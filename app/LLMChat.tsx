@@ -41,7 +41,7 @@ const LLMChat: React.FC<LLMChatProps> = ({ selectedModel, onRequireApiKey }) => 
         onRequireApiKey();
         return;
       }
-      const genAI = new GoogleGenAI({ apiKey: getApiKey() });
+      const genAI = new GoogleGenAI({ vertexai: true, apiKey: getApiKey() });
 
       const aiParams: any = {
         model: selectedModel,

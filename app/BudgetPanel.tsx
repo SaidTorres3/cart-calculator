@@ -159,7 +159,7 @@ const Budget: React.FC<BudgetProps> = ({ selectedModel, onRequireApiKey, onRefre
       const base64Audio = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
-      const genAI = new GoogleGenAI({ apiKey: getApiKey() });
+      const genAI = new GoogleGenAI({ vertexai: true, apiKey: getApiKey() });
       const aiParams: any = {
         model: selectedModel,
         contents: [
