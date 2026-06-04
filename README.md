@@ -20,7 +20,7 @@ The shopping list integrates with Google Gemini via the `@google/genai` SDK. You
 - Optional **Budget** module to track your current budget from different sources.
 - Also an optional **LLM Chat** screen for talking to the model (needs to be enabled with the `EXPO_PUBLIC_LLM_CHAT_ENABLED` environment variable; not recommended).
 - Prompt for a Gemini API key on first launch and set or remove it from the settings screen.
-- Works on Android, iOS and the web through Expo.
+- Works on Android, iOS, and the web through Expo, with WearOS support for smartwatches.
 
 ## Setup
 
@@ -40,17 +40,34 @@ The shopping list integrates with Google Gemini via the `@google/genai` SDK. You
    ```
 5. Use the settings button in the app header to choose between the available AI models or manage the stored API key.
 
-## Building
+## Building and Deploying
 
-To create a release build for Android you can use the provided script:
+If it's the first time you build the project, you'll need to run `npx expo prebuild` first.
 
-```bash
-./runAndroidBuild.ps1
+### Android & WearOS
+
+To create a release build for both the Android Phone app and WearOS app, run:
+
+```powershell
+.\build-apks.ps1
 ```
 
-If its the first time you build the project, you'll need to run `npx expo prebuild` first.
+This script compiles the release builds using Gradle. Once the builds are successful, you can deploy them to your devices using the following ADB scripts:
 
-For iOS or other targets see the [Expo build documentation](https://docs.expo.dev/build/introduction/).
+- **Phone App**:
+  ```powershell
+  .\deploy-phone.ps1
+  ```
+- **WearOS Watch App**:
+  ```powershell
+  .\deploy-wear.ps1
+  ```
+
+*Note: Make sure Wireless Debugging is enabled and your device is connected/paired using ADB before running the deployment scripts.*
+
+### iOS and Other Targets
+
+For iOS or other targets, see the [Expo build documentation](https://docs.expo.dev/build/introduction/).
 
 ## License
 
