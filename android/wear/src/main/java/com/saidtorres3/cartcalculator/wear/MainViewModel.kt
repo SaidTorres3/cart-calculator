@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.File
 
 enum class ActiveScreen { CART, WISHLIST }
@@ -31,6 +33,12 @@ class MainViewModel(
 ) : ViewModel() {
 
     private val geminiService = GeminiService()
+
+    // Mutex to serialize all read-modify-write operations on item lists.
+    // Prevents race conditions when multiple recordings finish processing
+    // close together — each waits for the previous to complete its save
+    // before reading the current state.
+    private val itemsMutex = Mutex()
 
     val cartItems: StateFlow<List<CartItem>> = repository.cartItems
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
@@ -104,6 +112,12 @@ class MainViewModel(
         }
         if (apiKey.value.isEmpty()) {
             _errorMessage.value = "No API key. Set it in the phone app first."
+            return
+        }
+        // Prevent starting a new recording while a previous one is still processing.
+        // This guards against rapid cancel-restart cycles that cause race conditions.
+        if (_isProcessingCart.value || _isProcessingWishlist.value) {
+            _errorMessage.value = "Please wait for the current recording to finish processing."
             return
         }
         try {
@@ -182,9 +196,14 @@ class MainViewModel(
                             base64, "audio/mp4", key, model
                         )
                         if (newItems.isNotEmpty()) {
-                            val updated = newItems + cartItems.value
-                            repository.saveCartItems(updated)
-                            repository.pushCartToPhone(updated)
+                            // Mutex ensures we read the latest state and write atomically
+                            itemsMutex.withLock {
+                                val updated = newItems + cartItems.value
+                                repository.saveCartItems(updated)
+                            }
+                            // Use additive push: send ONLY the new items
+                            // so the phone appends without risking data loss
+                            repository.pushNewCartItemsToPhone(newItems)
                         }
                     }
                     RecordingTarget.WISHLIST -> {
@@ -192,9 +211,13 @@ class MainViewModel(
                             base64, "audio/mp4", key, model
                         )
                         if (newItems.isNotEmpty()) {
-                            val updated = newItems + wishlistItems.value
-                            repository.saveWishlistItems(updated)
-                            repository.pushWishlistToPhone(updated)
+                            // Mutex ensures we read the latest state and write atomically
+                            itemsMutex.withLock {
+                                val updated = newItems + wishlistItems.value
+                                repository.saveWishlistItems(updated)
+                            }
+                            // Use additive push: send ONLY the new items
+                            repository.pushNewWishlistItemsToPhone(newItems)
                         }
                     }
                 }

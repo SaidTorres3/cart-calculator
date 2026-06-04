@@ -28,6 +28,41 @@ import { getApiKey, LLM_CHAT_ENABLED, initApiKey, clearApiKey, setApiKey } from 
 import { syncToWear, getWatchUpdates } from "../utils/wearSync";
 import { useTranslation } from 'react-i18next';
 
+/**
+ * Merges incoming items (from watch) with existing items (on phone) by ID.
+ * - Items from incoming with IDs already on the phone: update the phone version.
+ * - Items from incoming with new IDs: prepend them.
+ * - Items on the phone NOT in incoming: PRESERVE them (never delete via sync).
+ * This prevents data loss when the watch sends a stale snapshot.
+ */
+function mergeItemsById(existingJson: string | null, incomingJson: string): string {
+  try {
+    const incoming: any[] = JSON.parse(incomingJson);
+    if (!Array.isArray(incoming)) return incomingJson;
+
+    if (!existingJson) return incomingJson;
+    const existing: any[] = JSON.parse(existingJson);
+    if (!Array.isArray(existing)) return incomingJson;
+
+    const incomingIds = new Set(incoming.map((item: any) => item.id).filter(Boolean));
+
+    // Start with all incoming items (they take priority for updates)
+    const merged = [...incoming];
+
+    // Preserve any existing items NOT in the incoming payload
+    for (const item of existing) {
+      if (item.id && !incomingIds.has(item.id)) {
+        merged.push(item);
+      }
+    }
+
+    return JSON.stringify(merged);
+  } catch {
+    // On any parse error, fall back to incoming data
+    return incomingJson;
+  }
+}
+
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
@@ -187,9 +222,15 @@ export default function Index() {
       async (event: { type: string; data: string }) => {
         try {
           if (event.type === 'cart') {
-            await AsyncStorage.setItem('SHOPPING_ITEMS', event.data);
+            // Merge incoming watch data with existing phone data by item ID.
+            // This prevents data loss if the watch sends a stale snapshot.
+            const existing = await AsyncStorage.getItem('SHOPPING_ITEMS');
+            const merged = mergeItemsById(existing, event.data);
+            await AsyncStorage.setItem('SHOPPING_ITEMS', merged);
           } else if (event.type === 'wishlist') {
-            await AsyncStorage.setItem('WISHLIST_ITEMS', event.data);
+            const existing = await AsyncStorage.getItem('WISHLIST_ITEMS');
+            const merged = mergeItemsById(existing, event.data);
+            await AsyncStorage.setItem('WISHLIST_ITEMS', merged);
           }
           setRefreshKey(prev => prev + 1);
         } catch {
@@ -210,10 +251,15 @@ export default function Index() {
       try {
         const updates = await getWatchUpdates();
         if (updates.cart !== null) {
-          await AsyncStorage.setItem('SHOPPING_ITEMS', updates.cart);
+          // Merge watch cart with existing phone cart to prevent data loss
+          const existing = await AsyncStorage.getItem('SHOPPING_ITEMS');
+          const merged = mergeItemsById(existing, updates.cart);
+          await AsyncStorage.setItem('SHOPPING_ITEMS', merged);
         }
         if (updates.wishlist !== null) {
-          await AsyncStorage.setItem('WISHLIST_ITEMS', updates.wishlist);
+          const existing = await AsyncStorage.getItem('WISHLIST_ITEMS');
+          const merged = mergeItemsById(existing, updates.wishlist);
+          await AsyncStorage.setItem('WISHLIST_ITEMS', merged);
         }
         if (updates.cart !== null || updates.wishlist !== null) {
           // Trigger a re-render of the lists

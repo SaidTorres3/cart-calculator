@@ -45,28 +45,147 @@ class WearDataListenerService : WearableListenerService() {
             val path = event.dataItem.uri.path ?: return@forEach
             when (path) {
                 WearSyncModule.PATH_UPDATE_CART -> {
-                    Log.d(TAG, "Received cart update from watch")
+                    Log.d(TAG, "Received cart update from watch - merging")
                     val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
                     val cartJson = dataMap.getString(KEY_CART) ?: return@forEach
                     scope.launch {
                         val prefs = applicationContext.getSharedPreferences(
                             PREFS_NAME, MODE_PRIVATE
                         )
-                        prefs.edit().putString(KEY_WATCH_CART, cartJson).apply()
+                        // Merge: preserve phone items not in the watch payload
+                        val merged = mergeJsonById(
+                            prefs.getString(KEY_CART, null),
+                            cartJson
+                        )
+                        prefs.edit().putString(KEY_WATCH_CART, merged).apply()
                     }
                 }
                 WearSyncModule.PATH_UPDATE_WISHLIST -> {
-                    Log.d(TAG, "Received wishlist update from watch")
+                    Log.d(TAG, "Received wishlist update from watch - merging")
                     val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
                     val wishlistJson = dataMap.getString(KEY_WISHLIST) ?: return@forEach
                     scope.launch {
                         val prefs = applicationContext.getSharedPreferences(
                             PREFS_NAME, MODE_PRIVATE
                         )
-                        prefs.edit().putString(KEY_WATCH_WISHLIST, wishlistJson).apply()
+                        val merged = mergeJsonById(
+                            prefs.getString(KEY_WISHLIST, null),
+                            wishlistJson
+                        )
+                        prefs.edit().putString(KEY_WATCH_WISHLIST, merged).apply()
+                    }
+                }
+                WearSyncModule.PATH_ADD_CART_ITEMS -> {
+                    Log.d(TAG, "Received ADD cart items from watch")
+                    val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+                    val newItemsJson = dataMap.getString(KEY_CART) ?: return@forEach
+                    scope.launch {
+                        val prefs = applicationContext.getSharedPreferences(
+                            PREFS_NAME, MODE_PRIVATE
+                        )
+                        // Additive: append new items, never remove existing
+                        val merged = appendJsonById(
+                            prefs.getString(KEY_CART, null),
+                            newItemsJson
+                        )
+                        prefs.edit().putString(KEY_WATCH_CART, merged).apply()
+                    }
+                }
+                WearSyncModule.PATH_ADD_WISHLIST_ITEMS -> {
+                    Log.d(TAG, "Received ADD wishlist items from watch")
+                    val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+                    val newItemsJson = dataMap.getString(KEY_WISHLIST) ?: return@forEach
+                    scope.launch {
+                        val prefs = applicationContext.getSharedPreferences(
+                            PREFS_NAME, MODE_PRIVATE
+                        )
+                        val merged = appendJsonById(
+                            prefs.getString(KEY_WISHLIST, null),
+                            newItemsJson
+                        )
+                        prefs.edit().putString(KEY_WATCH_WISHLIST, merged).apply()
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Merges incoming JSON array with existing JSON array by item ID.
+     * Incoming items take priority (update existing). Existing items
+     * not in the incoming payload are PRESERVED.
+     */
+    private fun mergeJsonById(existingJson: String?, incomingJson: String): String {
+        if (existingJson.isNullOrBlank()) return incomingJson
+        return try {
+            val existing = org.json.JSONArray(existingJson)
+            val incoming = org.json.JSONArray(incomingJson)
+
+            val incomingIds = mutableSetOf<String>()
+            val result = org.json.JSONArray()
+
+            // Incoming items first (they take priority)
+            for (i in 0 until incoming.length()) {
+                val obj = incoming.getJSONObject(i)
+                val id = obj.optString("id", "")
+                if (id.isNotEmpty()) incomingIds.add(id)
+                result.put(obj)
+            }
+
+            // Preserve existing items not in the incoming payload
+            for (i in 0 until existing.length()) {
+                val obj = existing.getJSONObject(i)
+                val id = obj.optString("id", "")
+                if (id.isNotEmpty() && id !in incomingIds) {
+                    result.put(obj)
+                    Log.d(TAG, "mergeJsonById: preserved existing item id=$id")
+                }
+            }
+
+            Log.d(TAG, "mergeJsonById: incoming=${incoming.length()}, existing=${existing.length()}, merged=${result.length()}")
+            result.toString()
+        } catch (e: Exception) {
+            Log.e(TAG, "mergeJsonById failed, using incoming as-is", e)
+            incomingJson
+        }
+    }
+
+    /**
+     * Appends new items to an existing JSON array, deduplicating by ID.
+     * Never removes existing items.
+     */
+    private fun appendJsonById(existingJson: String?, newItemsJson: String): String {
+        if (existingJson.isNullOrBlank()) return newItemsJson
+        return try {
+            val existing = org.json.JSONArray(existingJson)
+            val newItems = org.json.JSONArray(newItemsJson)
+
+            val existingIds = mutableSetOf<String>()
+            for (i in 0 until existing.length()) {
+                val id = existing.getJSONObject(i).optString("id", "")
+                if (id.isNotEmpty()) existingIds.add(id)
+            }
+
+            // Prepend genuinely new items, then keep all existing
+            val result = org.json.JSONArray()
+            var added = 0
+            for (i in 0 until newItems.length()) {
+                val obj = newItems.getJSONObject(i)
+                val id = obj.optString("id", "")
+                if (id.isNotEmpty() && id !in existingIds) {
+                    result.put(obj)
+                    added++
+                }
+            }
+            for (i in 0 until existing.length()) {
+                result.put(existing.getJSONObject(i))
+            }
+
+            Log.d(TAG, "appendJsonById: added $added new items, total=${result.length()}")
+            result.toString()
+        } catch (e: Exception) {
+            Log.e(TAG, "appendJsonById failed, using newItems as-is", e)
+            newItemsJson
         }
     }
 

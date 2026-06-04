@@ -37,6 +37,8 @@ class DataRepository(private val context: Context) {
         const val PATH_REQUEST_SYNC = "/request_sync"
         const val PATH_UPDATE_CART = "/update_cart"
         const val PATH_UPDATE_WISHLIST = "/update_wishlist"
+        const val PATH_ADD_CART_ITEMS = "/add_cart_items"
+        const val PATH_ADD_WISHLIST_ITEMS = "/add_wishlist_items"
     }
 
     init {
@@ -85,7 +87,7 @@ class DataRepository(private val context: Context) {
         }
     }
 
-    // Pushes updated cart to the phone via Wearable Data Layer
+    // Pushes updated cart to the phone via Wearable Data Layer (full list — for toggle/remove)
     fun pushCartToPhone(items: List<CartItem>) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -100,7 +102,24 @@ class DataRepository(private val context: Context) {
         }
     }
 
-    // Pushes updated wishlist to the phone via Wearable Data Layer
+    // Pushes ONLY new cart items to the phone (additive — phone appends, never deletes)
+    fun pushNewCartItemsToPhone(newItems: List<CartItem>) {
+        if (newItems.isEmpty()) return
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val request = PutDataMapRequest.create(PATH_ADD_CART_ITEMS).apply {
+                    dataMap.putString("cart", newItems.toJsonString())
+                    dataMap.putLong("timestamp", System.currentTimeMillis())
+                }.asPutDataRequest().setUrgent()
+                Tasks.await(Wearable.getDataClient(context).putDataItem(request))
+                Log.d("DataRepository", "pushNewCartItemsToPhone: sent ${newItems.size} new items")
+            } catch (e: Exception) {
+                Log.e("DataRepository", "pushNewCartItemsToPhone failed", e)
+            }
+        }
+    }
+
+    // Pushes updated wishlist to the phone via Wearable Data Layer (full list — for toggle/remove)
     fun pushWishlistToPhone(items: List<WishlistItem>) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -111,6 +130,23 @@ class DataRepository(private val context: Context) {
                 Tasks.await(Wearable.getDataClient(context).putDataItem(request))
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+    }
+
+    // Pushes ONLY new wishlist items to the phone (additive — phone appends, never deletes)
+    fun pushNewWishlistItemsToPhone(newItems: List<WishlistItem>) {
+        if (newItems.isEmpty()) return
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val request = PutDataMapRequest.create(PATH_ADD_WISHLIST_ITEMS).apply {
+                    dataMap.putString("wishlist", newItems.wishlistToJsonString())
+                    dataMap.putLong("timestamp", System.currentTimeMillis())
+                }.asPutDataRequest().setUrgent()
+                Tasks.await(Wearable.getDataClient(context).putDataItem(request))
+                Log.d("DataRepository", "pushNewWishlistItemsToPhone: sent ${newItems.size} new items")
+            } catch (e: Exception) {
+                Log.e("DataRepository", "pushNewWishlistItemsToPhone failed", e)
             }
         }
     }

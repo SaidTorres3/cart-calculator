@@ -45,6 +45,8 @@ class WearSyncModule(private val reactContext: ReactApplicationContext) :
         const val PATH_SYNC = "/sync"
         const val PATH_UPDATE_CART = "/update_cart"
         const val PATH_UPDATE_WISHLIST = "/update_wishlist"
+        const val PATH_ADD_CART_ITEMS = "/add_cart_items"
+        const val PATH_ADD_WISHLIST_ITEMS = "/add_wishlist_items"
         const val EVENT_WEAR_DATA_UPDATED = "WearDataUpdated"
     }
 
@@ -74,26 +76,57 @@ class WearSyncModule(private val reactContext: ReactApplicationContext) :
                 PATH_UPDATE_CART -> {
                     val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
                     val cartJson = dataMap.getString("cart") ?: return@forEach
-                    Log.d(TAG, "onDataChanged: cart from watch (${cartJson.length} chars) - emitting to JS")
-                    // Also persist for background access via getWatchUpdates()
+                    Log.d(TAG, "onDataChanged: cart from watch (${cartJson.length} chars) - merging")
+                    // Merge: preserve phone items not in the watch payload
+                    val merged = mergeCartJson(cartJson)
                     reactContext.applicationContext
                         .getSharedPreferences(WearDataListenerService.PREFS_NAME, Context.MODE_PRIVATE)
-                        .edit().putString(WearDataListenerService.KEY_WATCH_CART, cartJson).apply()
+                        .edit().putString(WearDataListenerService.KEY_WATCH_CART, merged).apply()
                     emitEvent(EVENT_WEAR_DATA_UPDATED, Arguments.createMap().apply {
                         putString("type", "cart")
-                        putString("data", cartJson)
+                        putString("data", merged)
                     })
                 }
                 PATH_UPDATE_WISHLIST -> {
                     val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
                     val wishlistJson = dataMap.getString("wishlist") ?: return@forEach
-                    Log.d(TAG, "onDataChanged: wishlist from watch (${wishlistJson.length} chars) - emitting to JS")
+                    Log.d(TAG, "onDataChanged: wishlist from watch (${wishlistJson.length} chars) - merging")
+                    // Merge: preserve phone items not in the watch payload
+                    val merged = mergeWishlistJson(wishlistJson)
                     reactContext.applicationContext
                         .getSharedPreferences(WearDataListenerService.PREFS_NAME, Context.MODE_PRIVATE)
-                        .edit().putString(WearDataListenerService.KEY_WATCH_WISHLIST, wishlistJson).apply()
+                        .edit().putString(WearDataListenerService.KEY_WATCH_WISHLIST, merged).apply()
                     emitEvent(EVENT_WEAR_DATA_UPDATED, Arguments.createMap().apply {
                         putString("type", "wishlist")
-                        putString("data", wishlistJson)
+                        putString("data", merged)
+                    })
+                }
+                PATH_ADD_CART_ITEMS -> {
+                    val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+                    val newItemsJson = dataMap.getString("cart") ?: return@forEach
+                    Log.d(TAG, "onDataChanged: ADD cart items from watch (${newItemsJson.length} chars)")
+                    // Additive: append new items (dedup by ID)
+                    val merged = appendCartJson(newItemsJson)
+                    reactContext.applicationContext
+                        .getSharedPreferences(WearDataListenerService.PREFS_NAME, Context.MODE_PRIVATE)
+                        .edit().putString(WearDataListenerService.KEY_WATCH_CART, merged).apply()
+                    emitEvent(EVENT_WEAR_DATA_UPDATED, Arguments.createMap().apply {
+                        putString("type", "cart")
+                        putString("data", merged)
+                    })
+                }
+                PATH_ADD_WISHLIST_ITEMS -> {
+                    val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+                    val newItemsJson = dataMap.getString("wishlist") ?: return@forEach
+                    Log.d(TAG, "onDataChanged: ADD wishlist items from watch (${newItemsJson.length} chars)")
+                    // Additive: append new items (dedup by ID)
+                    val merged = appendWishlistJson(newItemsJson)
+                    reactContext.applicationContext
+                        .getSharedPreferences(WearDataListenerService.PREFS_NAME, Context.MODE_PRIVATE)
+                        .edit().putString(WearDataListenerService.KEY_WATCH_WISHLIST, merged).apply()
+                    emitEvent(EVENT_WEAR_DATA_UPDATED, Arguments.createMap().apply {
+                        putString("type", "wishlist")
+                        putString("data", merged)
                     })
                 }
             }
@@ -175,6 +208,190 @@ class WearSyncModule(private val reactContext: ReactApplicationContext) :
             promise.resolve(map)
         } catch (e: Exception) {
             promise.reject("WEAR_PREFS_ERROR", e)
+        }
+    }
+
+    // ---- Merge helpers -------------------------------------------------------
+    // These ensure the phone never loses items during sync from the watch.
+
+    /**
+     * Merges incoming cart JSON from the watch with existing phone cart.
+     * Items present in the watch payload update the phone version (by ID).
+     * Items on the phone NOT in the watch payload are PRESERVED.
+     * New items from the watch are prepended.
+     */
+    private fun mergeCartJson(incomingJson: String): String {
+        return try {
+            val existingJson = reactContext.applicationContext
+                .getSharedPreferences(WearDataListenerService.PREFS_NAME, Context.MODE_PRIVATE)
+                .getString(WearDataListenerService.KEY_CART, null)
+                ?: return incomingJson // No existing data, use incoming as-is
+
+            val existing = org.json.JSONArray(existingJson)
+            val incoming = org.json.JSONArray(incomingJson)
+
+            val existingById = mutableMapOf<String, org.json.JSONObject>()
+            for (i in 0 until existing.length()) {
+                val obj = existing.getJSONObject(i)
+                val id = obj.optString("id", "")
+                if (id.isNotEmpty()) existingById[id] = obj
+            }
+
+            val incomingIds = mutableSetOf<String>()
+            val result = org.json.JSONArray()
+
+            // First: add all incoming items (they take priority for updates)
+            for (i in 0 until incoming.length()) {
+                val obj = incoming.getJSONObject(i)
+                val id = obj.optString("id", "")
+                if (id.isNotEmpty()) incomingIds.add(id)
+                result.put(obj)
+            }
+
+            // Then: preserve any existing items NOT in the incoming payload
+            for (i in 0 until existing.length()) {
+                val obj = existing.getJSONObject(i)
+                val id = obj.optString("id", "")
+                if (id.isNotEmpty() && id !in incomingIds) {
+                    result.put(obj)
+                    Log.d(TAG, "mergeCartJson: preserved phone-only item id=$id")
+                }
+            }
+
+            Log.d(TAG, "mergeCartJson: incoming=${incoming.length()}, existing=${existing.length()}, merged=${result.length()}")
+            result.toString()
+        } catch (e: Exception) {
+            Log.e(TAG, "mergeCartJson failed, using incoming as-is", e)
+            incomingJson
+        }
+    }
+
+    /**
+     * Merges incoming wishlist JSON from the watch with existing phone wishlist.
+     * Same merge logic as cart.
+     */
+    private fun mergeWishlistJson(incomingJson: String): String {
+        return try {
+            val existingJson = reactContext.applicationContext
+                .getSharedPreferences(WearDataListenerService.PREFS_NAME, Context.MODE_PRIVATE)
+                .getString(WearDataListenerService.KEY_WISHLIST, null)
+                ?: return incomingJson
+
+            val existing = org.json.JSONArray(existingJson)
+            val incoming = org.json.JSONArray(incomingJson)
+
+            val incomingIds = mutableSetOf<String>()
+            val result = org.json.JSONArray()
+
+            for (i in 0 until incoming.length()) {
+                val obj = incoming.getJSONObject(i)
+                val id = obj.optString("id", "")
+                if (id.isNotEmpty()) incomingIds.add(id)
+                result.put(obj)
+            }
+
+            for (i in 0 until existing.length()) {
+                val obj = existing.getJSONObject(i)
+                val id = obj.optString("id", "")
+                if (id.isNotEmpty() && id !in incomingIds) {
+                    result.put(obj)
+                    Log.d(TAG, "mergeWishlistJson: preserved phone-only item id=$id")
+                }
+            }
+
+            Log.d(TAG, "mergeWishlistJson: incoming=${incoming.length()}, existing=${existing.length()}, merged=${result.length()}")
+            result.toString()
+        } catch (e: Exception) {
+            Log.e(TAG, "mergeWishlistJson failed, using incoming as-is", e)
+            incomingJson
+        }
+    }
+
+    /**
+     * Appends new cart items from the watch to the existing phone cart.
+     * Only adds items with IDs not already present. Never removes existing items.
+     */
+    private fun appendCartJson(newItemsJson: String): String {
+        return try {
+            val existingJson = reactContext.applicationContext
+                .getSharedPreferences(WearDataListenerService.PREFS_NAME, Context.MODE_PRIVATE)
+                .getString(WearDataListenerService.KEY_CART, null)
+
+            if (existingJson.isNullOrBlank()) return newItemsJson
+
+            val existing = org.json.JSONArray(existingJson)
+            val newItems = org.json.JSONArray(newItemsJson)
+
+            val existingIds = mutableSetOf<String>()
+            for (i in 0 until existing.length()) {
+                val id = existing.getJSONObject(i).optString("id", "")
+                if (id.isNotEmpty()) existingIds.add(id)
+            }
+
+            // Prepend new items (only those with new IDs)
+            val result = org.json.JSONArray()
+            var added = 0
+            for (i in 0 until newItems.length()) {
+                val obj = newItems.getJSONObject(i)
+                val id = obj.optString("id", "")
+                if (id.isNotEmpty() && id !in existingIds) {
+                    result.put(obj)
+                    added++
+                }
+            }
+            // Then add all existing items
+            for (i in 0 until existing.length()) {
+                result.put(existing.getJSONObject(i))
+            }
+
+            Log.d(TAG, "appendCartJson: added $added new items, total=${result.length()}")
+            result.toString()
+        } catch (e: Exception) {
+            Log.e(TAG, "appendCartJson failed, using newItems as-is", e)
+            newItemsJson
+        }
+    }
+
+    /**
+     * Appends new wishlist items from the watch to the existing phone wishlist.
+     * Only adds items with IDs not already present. Never removes existing items.
+     */
+    private fun appendWishlistJson(newItemsJson: String): String {
+        return try {
+            val existingJson = reactContext.applicationContext
+                .getSharedPreferences(WearDataListenerService.PREFS_NAME, Context.MODE_PRIVATE)
+                .getString(WearDataListenerService.KEY_WISHLIST, null)
+
+            if (existingJson.isNullOrBlank()) return newItemsJson
+
+            val existing = org.json.JSONArray(existingJson)
+            val newItems = org.json.JSONArray(newItemsJson)
+
+            val existingIds = mutableSetOf<String>()
+            for (i in 0 until existing.length()) {
+                val id = existing.getJSONObject(i).optString("id", "")
+                if (id.isNotEmpty()) existingIds.add(id)
+            }
+
+            val result = org.json.JSONArray()
+            var added = 0
+            for (i in 0 until newItems.length()) {
+                val obj = newItems.getJSONObject(i)
+                val id = obj.optString("id", "")
+                if (id.isNotEmpty() && id !in existingIds) {
+                    result.put(obj)
+                    added++
+                }
+            }
+            for (i in 0 until existing.length()) {
+                result.put(existing.getJSONObject(i))
+            }
+
+            Log.d(TAG, "appendWishlistJson: added $added new items, total=${result.length()}")
+            result.toString()
+        } catch (e: Exception) {
+            Log.e(TAG, "appendWishlistJson failed, using newItems as-is", e)
+            newItemsJson
         }
     }
 }
