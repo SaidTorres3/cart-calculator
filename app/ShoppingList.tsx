@@ -478,8 +478,10 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
     try {
       const saved = await AsyncStorage.getItem('BUDGET_ENTRIES');
       if (saved) {
-        const entries: { amount: string }[] = JSON.parse(saved);
-        const total = entries.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+        const entries: { amount: string; visible?: boolean }[] = JSON.parse(saved);
+        const total = entries
+          .filter((e) => e.visible !== false)
+          .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
         setBudgetTotal(total);
         setHasBudgetEntries(entries.length > 0);
       } else {
