@@ -83,7 +83,7 @@ private fun WearAppContent(viewModel: MainViewModel) {
     val errorMessage by viewModel.errorMessage.collectAsState()
 
     val pageCount = if (budgetEnabled) 3 else 2
-    val pagerState = rememberPagerState(pageCount = { pageCount })
+    val pagerState = rememberPagerState(pageCount = remember(pageCount) { { pageCount } })
 
     val pageIndicatorState = object : PageIndicatorState {
         override val pageOffset: Float get() = pagerState.currentPageOffsetFraction

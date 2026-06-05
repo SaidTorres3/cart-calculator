@@ -12,6 +12,7 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  DeviceEventEmitter,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
@@ -42,6 +43,8 @@ interface WishlistProps {
 
 const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey, onRefreshAll }) => {
   const [items, setItems] = useState<Item[]>([]);
+  const isInitialMount = useRef(true);
+  const isLoadingData = useRef(false);
   const [product, setProduct] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
@@ -60,26 +63,39 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey, onR
     }
   }, []);
 
+  const loadSavedData = async () => {
+    try {
+      isLoadingData.current = true;
+      const savedData = await AsyncStorage.getItem(STORAGE_KEY);
+      if (savedData !== null) {
+        const parsedItems: Item[] = JSON.parse(savedData);
+        setItems((prevItems) => {
+          return parsedItems.map((i) => {
+            const existing = prevItems.find((p) => p.id === i.id);
+            return {
+              ...i,
+              fadeAnim: existing?.fadeAnim || new Animated.Value(1),
+            };
+          });
+        });
+      } else {
+        setItems([]);
+      }
+    } catch (error) {
+      console.error("Failed to load data from AsyncStorage", error);
+    } finally {
+      setTimeout(() => {
+        isLoadingData.current = false;
+      }, 100);
+    }
+  };
+
   // Load data from AsyncStorage on app start
   useEffect(() => {
-    const loadSavedData = async () => {
-      try {
-        const savedData = await AsyncStorage.getItem(STORAGE_KEY);
-        if (savedData !== null) {
-          const parsedItems: Item[] = JSON.parse(savedData);
-          // Re-initialize fadeAnim for each item
-          const restoredItems = parsedItems.map((i) => ({
-            ...i,
-            fadeAnim: new Animated.Value(1),
-          }));
-          setItems(restoredItems);
-        }
-      } catch (error) {
-        console.error("Failed to load data from AsyncStorage", error);
-      }
-    };
-
     loadSavedData();
+
+    const sub = DeviceEventEmitter.addListener('AppStorageUpdated', loadSavedData);
+    return () => sub.remove();
   }, []);
 
   useEffect(() => {
@@ -109,6 +125,13 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey, onR
 
   // Save data to AsyncStorage whenever 'items' changes and sync to WearOS
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (isLoadingData.current) {
+      return;
+    }
     const saveData = async () => {
       try {
         const json = JSON.stringify(items);

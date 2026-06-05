@@ -170,7 +170,7 @@ fun CartScreen(
         autoCentering = AutoCenteringParams(itemIndex = 0)
     ) {
         // Summary Card at the top of the list
-        item {
+        item(key = "summary") {
             CartSummary(
                 totalAmount = totalAmount,
                 budgetEnabled = budgetEnabled,
@@ -179,7 +179,7 @@ fun CartScreen(
         }
 
         // Header row with title + mic button
-        item {
+        item(key = "header") {
             CartHeader(
                 isRecording = isRecording,
                 isProcessing = isProcessing,
@@ -189,11 +189,11 @@ fun CartScreen(
 
         // Items list
         if (items.isEmpty()) {
-            item {
+            item(key = "empty_state") {
                 EmptyState(message = "Cart is empty\nTap mic to add items")
             }
         } else {
-            items(items) { item ->
+            items(items, key = { it.id }) { item ->
                 CartItemRow(
                     item = item,
                     onToggleVisibility = { onToggleVisibility(item.id) },

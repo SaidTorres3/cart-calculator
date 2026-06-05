@@ -12,6 +12,7 @@ import {
   Platform,
   UIManager,
   AppState,
+  DeviceEventEmitter,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -49,6 +50,8 @@ interface ShoppingItem {
 
 const Budget: React.FC<BudgetProps> = ({ selectedModel, onRequireApiKey, onRefreshAll }) => {
   const [entries, setEntries] = useState<BudgetEntry[]>([]);
+  const isInitialMount = useRef(true);
+  const isLoadingData = useRef(false);
   const [cartTotal, setCartTotal] = useState(0);
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
@@ -99,24 +102,51 @@ const Budget: React.FC<BudgetProps> = ({ selectedModel, onRequireApiKey, onRefre
     })();
   }, []);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const saved = await AsyncStorage.getItem(BUDGET_STORAGE_KEY);
-        if (saved) setEntries(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to load budget entries', e);
+  const loadSavedData = async () => {
+    try {
+      isLoadingData.current = true;
+      const saved = await AsyncStorage.getItem(BUDGET_STORAGE_KEY);
+      if (saved) {
+        setEntries(JSON.parse(saved));
+      } else {
+        setEntries([]);
       }
-    })();
+    } catch (e) {
+      console.error('Failed to load budget entries', e);
+    } finally {
+      setTimeout(() => {
+        isLoadingData.current = false;
+      }, 100);
+    }
+  };
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      loadSavedData();
+      loadCartTotal();
+    };
+
+    loadSavedData();
     loadCartTotal();
 
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') loadCartTotal();
+      if (state === 'active') handleRefresh();
     });
-    return () => sub.remove();
+    const subStorage = DeviceEventEmitter.addListener('AppStorageUpdated', handleRefresh);
+    return () => {
+      sub.remove();
+      subStorage.remove();
+    };
   }, []);
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (isLoadingData.current) {
+      return;
+    }
     const saveData = async () => {
       try {
         if (entries.length > 0) {

@@ -149,7 +149,7 @@ fun BudgetScreen(
         autoCentering = AutoCenteringParams(itemIndex = 0)
     ) {
         // Header row with title + mic button
-        item {
+        item(key = "header") {
             BudgetHeader(
                 isRecording = isRecording,
                 isProcessing = isProcessing,
@@ -159,11 +159,11 @@ fun BudgetScreen(
 
         // Items list
         if (entries.isEmpty()) {
-            item {
+            item(key = "empty_state") {
                 EmptyState(message = "Budget is empty\nTap mic to add entries")
             }
         } else {
-            items(entries) { entry ->
+            items(entries, key = { it.id }) { entry ->
                 BudgetEntryRow(
                     entry = entry,
                     onToggleVisibility = { onToggleVisibility(entry.id) },

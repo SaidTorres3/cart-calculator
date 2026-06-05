@@ -14,6 +14,7 @@ import {
   UIManager,
   BackHandler,
   AppState,
+  DeviceEventEmitter,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
@@ -55,6 +56,8 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
   onRefreshAll,
 }) => {
   const [items, setItems] = useState<Item[]>([]);
+  const isInitialMount = useRef(true);
+  const isLoadingData = useRef(false);
   const [budgetTotal, setBudgetTotal] = useState(0);
   const [hasBudgetEntries, setHasBudgetEntries] = useState(false);
   const [product, setProduct] = useState("");
@@ -158,28 +161,46 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
     }
   }, []);
 
-  // Load data from AsyncStorage on app start
-  useEffect(() => {
-    const loadSavedData = async () => {
-      try {
-        const savedData = await AsyncStorage.getItem(STORAGE_KEY);
-        if (savedData !== null) {
-          const parsedItems: Item[] = JSON.parse(savedData);
-          // Re-initialize fadeAnim for each item
-          const restoredItems = parsedItems.map((i) => ({
-            ...i,
-            priceUncertain: i.priceUncertain ?? false,
-            fadeAnim: new Animated.Value(1),
-          }));
-          setItems(restoredItems);
-        }
-      } catch (error) {
-        console.error("Failed to load data from AsyncStorage", error);
+  const loadSavedData = async () => {
+    try {
+      isLoadingData.current = true;
+      const savedData = await AsyncStorage.getItem(STORAGE_KEY);
+      if (savedData !== null) {
+        const parsedItems: Item[] = JSON.parse(savedData);
+        setItems((prevItems) => {
+          return parsedItems.map((i) => {
+            const existing = prevItems.find((p) => p.id === i.id);
+            return {
+              ...i,
+              priceUncertain: i.priceUncertain ?? false,
+              fadeAnim: existing?.fadeAnim || new Animated.Value(1),
+            };
+          });
+        });
+      } else {
+        setItems([]);
       }
+    } catch (error) {
+      console.error("Failed to load data from AsyncStorage", error);
+    } finally {
+      setTimeout(() => {
+        isLoadingData.current = false;
+      }, 100);
+    }
+  };
+
+  // Load data from AsyncStorage on app start and listen to refreshes
+  useEffect(() => {
+    const handleRefresh = () => {
+      loadSavedData();
+      loadBudget();
     };
 
     loadSavedData();
-  }, []);
+
+    const sub = DeviceEventEmitter.addListener('AppStorageUpdated', handleRefresh);
+    return () => sub.remove();
+  }, [budgetEnabled]);
 
   useEffect(() => {
     (async () => {
@@ -208,6 +229,13 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
 
   // Save data to AsyncStorage whenever 'items' changes and sync to WearOS
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (isLoadingData.current) {
+      return;
+    }
     const saveData = async () => {
       try {
         const json = JSON.stringify(items);

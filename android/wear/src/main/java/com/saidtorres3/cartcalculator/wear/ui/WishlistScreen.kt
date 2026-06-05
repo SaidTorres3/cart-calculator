@@ -149,7 +149,7 @@ fun WishlistScreen(
         autoCentering = AutoCenteringParams(itemIndex = 0)
     ) {
         // Header row with title + mic button
-        item {
+        item(key = "header") {
             WishlistHeader(
                 isRecording = isRecording,
                 isProcessing = isProcessing,
@@ -159,11 +159,11 @@ fun WishlistScreen(
 
         // Items list
         if (items.isEmpty()) {
-            item {
+            item(key = "empty_state") {
                 EmptyState(message = "Wishlist is empty\nTap mic to add items")
             }
         } else {
-            items(items) { item ->
+            items(items, key = { it.id }) { item ->
                 WishlistItemRow(
                     item = item,
                     onToggleVisibility = { onToggleVisibility(item.id) },

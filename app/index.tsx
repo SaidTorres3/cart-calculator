@@ -141,9 +141,8 @@ export default function Index() {
     setApiKeyModalVisible(true);
   };
 
-  const [refreshKey, setRefreshKey] = useState(0);
   const handleRefreshAll = () => {
-    setRefreshKey(prev => prev + 1);
+    DeviceEventEmitter.emit('AppStorageUpdated');
   };
 
   const handleSaveApiKey = async (key: string) => {
@@ -237,7 +236,7 @@ export default function Index() {
             const merged = mergeItemsById(existing, event.data);
             await AsyncStorage.setItem('BUDGET_ENTRIES', merged);
           }
-          setRefreshKey(prev => prev + 1);
+          DeviceEventEmitter.emit('AppStorageUpdated');
         } catch {
           // Non-critical
         }
@@ -277,7 +276,7 @@ export default function Index() {
         }
         if (changed) {
           // Trigger a re-render of the lists
-          setRefreshKey(prev => prev + 1);
+          DeviceEventEmitter.emit('AppStorageUpdated');
         }
       } catch {
         // Non-critical
@@ -402,7 +401,6 @@ export default function Index() {
       </View>
       {activeScreen === "shoppingList" ? (
         <ShoppingList
-          key={`shopping-${refreshKey}`}
           selectedModel={selectedModel}
           autoHideWishlistOnAdd={autoHideWishlistOnAdd}
           budgetEnabled={budgetEnabled}
@@ -411,14 +409,12 @@ export default function Index() {
         />
       ) : activeScreen === "wishlist" ? (
         <Wishlist 
-          key={`wishlist-${refreshKey}`}
           selectedModel={selectedModel} 
           onRequireApiKey={requireApiKey} 
           onRefreshAll={handleRefreshAll}
         />
       ) : activeScreen === "budget" ? (
         <Budget 
-          key={`budget-${refreshKey}`}
           selectedModel={selectedModel} 
           onRequireApiKey={requireApiKey} 
           onRefreshAll={handleRefreshAll}
