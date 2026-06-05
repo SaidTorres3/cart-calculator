@@ -1,5 +1,6 @@
 package com.saidtorres3.cartcalculator.wear.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -40,7 +44,10 @@ import androidx.wear.compose.material.CircularProgressIndicator
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
+import androidx.wear.compose.material.dialog.Alert
+import androidx.wear.compose.material.dialog.Dialog
 import com.saidtorres3.cartcalculator.wear.model.CartItem
+import com.saidtorres3.cartcalculator.wear.model.BudgetEntry
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
@@ -48,18 +55,24 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.HelpOutline
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 @Composable
 fun CartScreen(
     items: List<CartItem>,
+    budgetEnabled: Boolean,
+    budgetEntries: List<BudgetEntry>,
     isRecording: Boolean,
     isProcessing: Boolean,
     focused: Boolean,
     onMicClick: () -> Unit,
     onToggleVisibility: (String) -> Unit,
-    onRemove: (String) -> Unit
+    onRemove: (String) -> Unit,
+    onTogglePriceUncertain: (String) -> Unit
 ) {
     val listState = rememberScalingLazyListState()
     val focusRequester = remember { FocusRequester() }
@@ -67,9 +80,72 @@ fun CartScreen(
     val haptic = LocalHapticFeedback.current
     var totalScroll = remember { 0f }
 
+    // Dialog state for delete confirmation
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var itemToDeleteId by remember { mutableStateOf<String?>(null) }
+    var itemToDeleteName by remember { mutableStateOf("") }
+
+    // Calculate total amount of visible items
+    val totalAmount = items
+        .filter { it.visible }
+        .sumOf { (it.price.toDoubleOrNull() ?: 0.0) * (it.quantity.toDoubleOrNull() ?: 1.0) }
+
+    // Calculate budget total and remaining budget
+    val budgetTotal = budgetEntries
+        .filter { it.visible }
+        .sumOf { it.amount.toDoubleOrNull() ?: 0.0 }
+    val remainingBudget = budgetTotal - totalAmount
+
     LaunchedEffect(focused) {
         if (focused) {
             focusRequester.requestFocus()
+        }
+    }
+
+    if (showDeleteDialog) {
+        Dialog(
+            showDialog = showDeleteDialog,
+            onDismissRequest = { showDeleteDialog = false }
+        ) {
+            Alert(
+                title = {
+                    Text(
+                        text = "Delete item?",
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                content = {
+                    Text(
+                        text = itemToDeleteName,
+                        textAlign = TextAlign.Center,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colors.onBackground.copy(alpha = 0.8f)
+                    )
+                },
+                negativeButton = {
+                    Button(
+                        onClick = { showDeleteDialog = false },
+                        colors = ButtonDefaults.secondaryButtonColors(),
+                        modifier = Modifier.size(ButtonDefaults.LargeButtonSize)
+                    ) {
+                        Icon(imageVector = Icons.Default.Close, contentDescription = "Cancel")
+                    }
+                },
+                positiveButton = {
+                    Button(
+                        onClick = {
+                            itemToDeleteId?.let { onRemove(it) }
+                            showDeleteDialog = false
+                        },
+                        colors = ButtonDefaults.primaryButtonColors(),
+                        modifier = Modifier.size(ButtonDefaults.LargeButtonSize)
+                    ) {
+                        Icon(imageVector = Icons.Default.Check, contentDescription = "Delete")
+                    }
+                }
+            )
         }
     }
 
@@ -93,6 +169,15 @@ fun CartScreen(
             .focusable(),
         autoCentering = AutoCenteringParams(itemIndex = 0)
     ) {
+        // Summary Card at the top of the list
+        item {
+            CartSummary(
+                totalAmount = totalAmount,
+                budgetEnabled = budgetEnabled,
+                remainingBudget = remainingBudget
+            )
+        }
+
         // Header row with title + mic button
         item {
             CartHeader(
@@ -112,10 +197,54 @@ fun CartScreen(
                 CartItemRow(
                     item = item,
                     onToggleVisibility = { onToggleVisibility(item.id) },
-                    onRemove = { onRemove(item.id) }
+                    onTogglePriceUncertain = { onTogglePriceUncertain(item.id) },
+                    onRemove = {
+                        itemToDeleteId = item.id
+                        itemToDeleteName = item.product
+                        showDeleteDialog = true
+                    }
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun CartSummary(
+    totalAmount: Double,
+    budgetEnabled: Boolean,
+    remainingBudget: Double
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp, bottom = 4.dp, start = 14.dp, end = 14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Total: $${"%.2f".format(totalAmount)}",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colors.primary,
+            textAlign = TextAlign.Center
+        )
+        if (budgetEnabled) {
+            val remainingColor = if (remainingBudget >= 0) Color(0xFF4CAF50) else Color(0xFFFF5252)
+            Text(
+                text = "Left: $${"%.2f".format(remainingBudget)}",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = remainingColor,
+                textAlign = TextAlign.Center
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(
+            modifier = Modifier
+                .fillMaxWidth(0.7f)
+                .height(1.dp)
+                .background(MaterialTheme.colors.onSurface.copy(alpha = 0.15f))
+        )
     }
 }
 
@@ -153,6 +282,7 @@ private fun CartHeader(
 private fun CartItemRow(
     item: CartItem,
     onToggleVisibility: () -> Unit,
+    onTogglePriceUncertain: () -> Unit,
     onRemove: () -> Unit
 ) {
     val alpha = if (item.visible) 1f else 0.4f
@@ -199,6 +329,21 @@ private fun CartItemRow(
                 contentDescription = "Toggle",
                 modifier = Modifier.size(14.dp),
                 tint = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
+            )
+        }
+        // Price uncertain toggle
+        Button(
+            onClick = onTogglePriceUncertain,
+            modifier = Modifier.size(28.dp),
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = Color.Transparent
+            )
+        ) {
+            Icon(
+                imageVector = Icons.Default.HelpOutline,
+                contentDescription = "Toggle uncertainty",
+                modifier = Modifier.size(14.dp),
+                tint = if (item.priceUncertain) Color(0xFF9C27B0) else MaterialTheme.colors.onSurface.copy(alpha = 0.5f)
             )
         }
         // Remove

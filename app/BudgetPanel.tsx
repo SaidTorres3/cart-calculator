@@ -21,6 +21,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { GoogleGenAI } from '@google/genai';
 import { getApiKey } from '../config';
 import { supportsThinkingConfig } from '../utils/aiUtils';
+import { syncToWear } from '../utils/wearSync';
 
 interface BudgetEntry {
   id: string;
@@ -116,15 +117,21 @@ const Budget: React.FC<BudgetProps> = ({ selectedModel, onRequireApiKey, onRefre
   }, []);
 
   useEffect(() => {
-    if (entries.length > 0) {
-      AsyncStorage.setItem(BUDGET_STORAGE_KEY, JSON.stringify(entries)).catch(
-        (e) => console.error('Failed to save budget entries', e)
-      );
-    } else {
-      AsyncStorage.removeItem(BUDGET_STORAGE_KEY).catch((e) =>
-        console.error('Failed to remove budget entries', e)
-      );
-    }
+    const saveData = async () => {
+      try {
+        if (entries.length > 0) {
+          const json = JSON.stringify(entries);
+          await AsyncStorage.setItem(BUDGET_STORAGE_KEY, json);
+          syncToWear({ budgetEntriesJson: json });
+        } else {
+          await AsyncStorage.removeItem(BUDGET_STORAGE_KEY);
+          syncToWear({ budgetEntriesJson: '[]' });
+        }
+      } catch (e) {
+        console.error('Failed to save budget entries', e);
+      }
+    };
+    saveData();
   }, [entries]);
 
   const budgetTotal = entries

@@ -129,6 +129,7 @@ export default function Index() {
     const newValue = !budgetEnabled;
     setBudgetEnabled(newValue);
     await AsyncStorage.setItem('BUDGET_ENABLED', newValue.toString());
+    syncToWear({ budgetEnabled: newValue });
     if (!newValue && activeScreen === 'budget') {
       setActiveScreen('shoppingList');
     }
@@ -214,7 +215,7 @@ export default function Index() {
     prepare();
   }, []);
 
-  // Real-time listener: watch pushed cart/wishlist changes while phone is in foreground
+  // Real-time listener: watch pushed cart/wishlist/budget changes while phone is in foreground
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     const sub = DeviceEventEmitter.addListener(
@@ -231,6 +232,10 @@ export default function Index() {
             const existing = await AsyncStorage.getItem('WISHLIST_ITEMS');
             const merged = mergeItemsById(existing, event.data);
             await AsyncStorage.setItem('WISHLIST_ITEMS', merged);
+          } else if (event.type === 'budget') {
+            const existing = await AsyncStorage.getItem('BUDGET_ENTRIES');
+            const merged = mergeItemsById(existing, event.data);
+            await AsyncStorage.setItem('BUDGET_ENTRIES', merged);
           }
           setRefreshKey(prev => prev + 1);
         } catch {
@@ -250,18 +255,27 @@ export default function Index() {
       // App came to foreground — pick up any edits made on the watch
       try {
         const updates = await getWatchUpdates();
+        let changed = false;
         if (updates.cart !== null) {
           // Merge watch cart with existing phone cart to prevent data loss
           const existing = await AsyncStorage.getItem('SHOPPING_ITEMS');
           const merged = mergeItemsById(existing, updates.cart);
           await AsyncStorage.setItem('SHOPPING_ITEMS', merged);
+          changed = true;
         }
         if (updates.wishlist !== null) {
           const existing = await AsyncStorage.getItem('WISHLIST_ITEMS');
           const merged = mergeItemsById(existing, updates.wishlist);
           await AsyncStorage.setItem('WISHLIST_ITEMS', merged);
+          changed = true;
         }
-        if (updates.cart !== null || updates.wishlist !== null) {
+        if (updates.budget !== null) {
+          const existing = await AsyncStorage.getItem('BUDGET_ENTRIES');
+          const merged = mergeItemsById(existing, updates.budget);
+          await AsyncStorage.setItem('BUDGET_ENTRIES', merged);
+          changed = true;
+        }
+        if (changed) {
           // Trigger a re-render of the lists
           setRefreshKey(prev => prev + 1);
         }

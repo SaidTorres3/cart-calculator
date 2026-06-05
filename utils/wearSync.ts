@@ -34,6 +34,8 @@ export async function syncToWear(opts?: {
   wishlistJson?: string;
   apiKey?: string;
   model?: string;
+  budgetEnabled?: boolean;
+  budgetEntriesJson?: string;
 }): Promise<void> {
   const WearSync = getWearSync();
   if (Platform.OS !== 'android' || !WearSync) {
@@ -42,7 +44,7 @@ export async function syncToWear(opts?: {
   }
 
   try {
-    const [cartRaw, wishlistRaw, modelRaw, apiKeyRaw] = await Promise.all([
+    const [cartRaw, wishlistRaw, modelRaw, apiKeyRaw, budgetEnabledRaw, budgetEntriesRaw] = await Promise.all([
       opts?.cartJson !== undefined
         ? Promise.resolve(opts.cartJson)
         : AsyncStorage.getItem(STORAGE_KEY_CART).then((v) => v ?? '[]'),
@@ -55,10 +57,16 @@ export async function syncToWear(opts?: {
       opts?.apiKey !== undefined
         ? Promise.resolve(opts.apiKey)
         : AsyncStorage.getItem(STORAGE_KEY_API_KEY).then((v) => v ?? getApiKey() ?? ''),
+      opts?.budgetEnabled !== undefined
+        ? Promise.resolve(opts.budgetEnabled)
+        : AsyncStorage.getItem('BUDGET_ENABLED').then((v) => v === 'true'),
+      opts?.budgetEntriesJson !== undefined
+        ? Promise.resolve(opts.budgetEntriesJson)
+        : AsyncStorage.getItem('BUDGET_ENTRIES').then((v) => v ?? '[]'),
     ]);
 
-    console.log('[WearSync] syncData: cart=' + cartRaw.length + ', apiKey=' + (apiKeyRaw ? 'SET' : 'EMPTY') + ', model=' + modelRaw);
-    WearSync.syncData(cartRaw, wishlistRaw, apiKeyRaw, modelRaw);
+    console.log('[WearSync] syncData: cart=' + cartRaw.length + ', apiKey=' + (apiKeyRaw ? 'SET' : 'EMPTY') + ', model=' + modelRaw + ', budgetEnabled=' + budgetEnabledRaw);
+    WearSync.syncData(cartRaw, wishlistRaw, apiKeyRaw, modelRaw, budgetEnabledRaw, budgetEntriesRaw);
   } catch (e) {
     // Non-critical: WearOS sync failures should not disrupt the main app.
     console.warn('[WearSync] sync failed:', e);
@@ -66,16 +74,17 @@ export async function syncToWear(opts?: {
 }
 
 /**
- * Reads any cart/wishlist updates written by the watch back to the phone.
+ * Reads any cart/wishlist/budget updates written by the watch back to the phone.
  * Returns null values if no watch updates are available.
  * Call this when the app comes to foreground.
  */
-export async function getWatchUpdates(): Promise<{ cart: string | null; wishlist: string | null }> {
+export async function getWatchUpdates(): Promise<{ cart: string | null; wishlist: string | null; budget: string | null }> {
   const WearSync = getWearSync();
-  if (Platform.OS !== 'android' || !WearSync?.getWatchUpdates) return { cart: null, wishlist: null };
+  if (Platform.OS !== 'android' || !WearSync?.getWatchUpdates) return { cart: null, wishlist: null, budget: null };
   try {
     return await WearSync.getWatchUpdates();
   } catch {
-    return { cart: null, wishlist: null };
+    return { cart: null, wishlist: null, budget: null };
   }
 }
+

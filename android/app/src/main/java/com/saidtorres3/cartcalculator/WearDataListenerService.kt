@@ -106,6 +106,36 @@ class WearDataListenerService : WearableListenerService() {
                         prefs.edit().putString(KEY_WATCH_WISHLIST, merged).apply()
                     }
                 }
+                WearSyncModule.PATH_UPDATE_BUDGET -> {
+                    Log.d(TAG, "Received budget update from watch - merging")
+                    val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+                    val budgetJson = dataMap.getString("budget") ?: return@forEach
+                    scope.launch {
+                        val prefs = applicationContext.getSharedPreferences(
+                            PREFS_NAME, MODE_PRIVATE
+                        )
+                        val merged = mergeJsonById(
+                            prefs.getString("budgetEntries", null),
+                            budgetJson
+                        )
+                        prefs.edit().putString("watch_budget", merged).apply()
+                    }
+                }
+                WearSyncModule.PATH_ADD_BUDGET_ITEMS -> {
+                    Log.d(TAG, "Received ADD budget items from watch")
+                    val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+                    val newItemsJson = dataMap.getString("budget") ?: return@forEach
+                    scope.launch {
+                        val prefs = applicationContext.getSharedPreferences(
+                            PREFS_NAME, MODE_PRIVATE
+                        )
+                        val merged = appendJsonById(
+                            prefs.getString("budgetEntries", null),
+                            newItemsJson
+                        )
+                        prefs.edit().putString("watch_budget", merged).apply()
+                    }
+                }
             }
         }
     }
@@ -204,13 +234,17 @@ class WearDataListenerService : WearableListenerService() {
             val wishlist = prefs.getString(KEY_WISHLIST, "[]") ?: "[]"
             val apiKey = prefs.getString(KEY_API_KEY, "") ?: ""
             val model = prefs.getString(KEY_MODEL, "") ?: ""
-            Log.d(TAG, "pushSyncToWatch: cart=${cart.length} chars, apiKey=${if (apiKey.isNotEmpty()) "set (${apiKey.length} chars)" else "EMPTY"}")
+            val budgetEnabled = prefs.getBoolean("budgetEnabled", false)
+            val budgetEntries = prefs.getString("budgetEntries", "[]") ?: "[]"
+            Log.d(TAG, "pushSyncToWatch: cart=${cart.length} chars, apiKey=${if (apiKey.isNotEmpty()) "set (${apiKey.length} chars)" else "EMPTY"}, budgetEnabled=$budgetEnabled")
 
             val request = PutDataMapRequest.create(WearSyncModule.PATH_SYNC).apply {
                 dataMap.putString("cart", cart)
                 dataMap.putString("wishlist", wishlist)
                 dataMap.putString("apiKey", apiKey)
                 dataMap.putString("model", model)
+                dataMap.putBoolean("budgetEnabled", budgetEnabled)
+                dataMap.putString("budgetEntries", budgetEntries)
                 dataMap.putLong("timestamp", System.currentTimeMillis())
             }.asPutDataRequest().setUrgent()
 

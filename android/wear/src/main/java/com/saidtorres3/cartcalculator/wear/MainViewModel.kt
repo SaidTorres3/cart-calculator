@@ -14,6 +14,7 @@ import com.saidtorres3.cartcalculator.wear.data.DataRepository
 import com.saidtorres3.cartcalculator.wear.data.GeminiService
 import com.saidtorres3.cartcalculator.wear.model.CartItem
 import com.saidtorres3.cartcalculator.wear.model.WishlistItem
+import com.saidtorres3.cartcalculator.wear.model.BudgetEntry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +26,7 @@ import kotlinx.coroutines.sync.withLock
 import java.io.File
 
 enum class ActiveScreen { CART, WISHLIST }
-enum class RecordingTarget { CART, WISHLIST }
+enum class RecordingTarget { CART, WISHLIST, BUDGET }
 
 class MainViewModel(
     private val repository: DataRepository,
@@ -46,6 +47,12 @@ class MainViewModel(
     val wishlistItems: StateFlow<List<WishlistItem>> = repository.wishlistItems
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    val budgetEntries: StateFlow<List<BudgetEntry>> = repository.budgetEntries
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val budgetEnabled: StateFlow<Boolean> = repository.budgetEnabled
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     val apiKey: StateFlow<String> = repository.apiKeyFlow
         .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
@@ -61,11 +68,17 @@ class MainViewModel(
     private val _isRecordingWishlist = MutableStateFlow(false)
     val isRecordingWishlist: StateFlow<Boolean> = _isRecordingWishlist.asStateFlow()
 
+    private val _isRecordingBudget = MutableStateFlow(false)
+    val isRecordingBudget: StateFlow<Boolean> = _isRecordingBudget.asStateFlow()
+
     private val _isProcessingCart = MutableStateFlow(false)
     val isProcessingCart: StateFlow<Boolean> = _isProcessingCart.asStateFlow()
 
     private val _isProcessingWishlist = MutableStateFlow(false)
     val isProcessingWishlist: StateFlow<Boolean> = _isProcessingWishlist.asStateFlow()
+
+    private val _isProcessingBudget = MutableStateFlow(false)
+    val isProcessingBudget: StateFlow<Boolean> = _isProcessingBudget.asStateFlow()
 
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
@@ -105,6 +118,14 @@ class MainViewModel(
         }
     }
 
+    fun toggleBudgetRecording() {
+        if (_isRecordingBudget.value) {
+            stopRecording(RecordingTarget.BUDGET)
+        } else {
+            startRecording(RecordingTarget.BUDGET)
+        }
+    }
+
     private fun startRecording(target: RecordingTarget) {
         if (!hasMicPermission()) {
             _errorMessage.value = "Microphone permission required"
@@ -116,7 +137,7 @@ class MainViewModel(
         }
         // Prevent starting a new recording while a previous one is still processing.
         // This guards against rapid cancel-restart cycles that cause race conditions.
-        if (_isProcessingCart.value || _isProcessingWishlist.value) {
+        if (_isProcessingCart.value || _isProcessingWishlist.value || _isProcessingBudget.value) {
             _errorMessage.value = "Please wait for the current recording to finish processing."
             return
         }
@@ -146,6 +167,7 @@ class MainViewModel(
             when (target) {
                 RecordingTarget.CART -> _isRecordingCart.value = true
                 RecordingTarget.WISHLIST -> _isRecordingWishlist.value = true
+                RecordingTarget.BUDGET -> _isRecordingBudget.value = true
             }
         } catch (e: Exception) {
             _errorMessage.value = "Failed to start recording: ${e.message}"
@@ -173,6 +195,10 @@ class MainViewModel(
             RecordingTarget.WISHLIST -> {
                 _isRecordingWishlist.value = false
                 _isProcessingWishlist.value = true
+            }
+            RecordingTarget.BUDGET -> {
+                _isRecordingBudget.value = false
+                _isProcessingBudget.value = true
             }
         }
 
@@ -220,6 +246,18 @@ class MainViewModel(
                             repository.pushNewWishlistItemsToPhone(newItems)
                         }
                     }
+                    RecordingTarget.BUDGET -> {
+                        val newEntries = geminiService.extractBudgetEntriesFromAudio(
+                            base64, "audio/mp4", key, model
+                        )
+                        if (newEntries.isNotEmpty()) {
+                            itemsMutex.withLock {
+                                val updated = newEntries + budgetEntries.value
+                                repository.saveBudgetEntries(updated)
+                            }
+                            repository.pushNewBudgetEntriesToPhone(newEntries)
+                        }
+                    }
                 }
             } catch (e: Exception) {
                 _errorMessage.value = "Processing failed: ${e.message}"
@@ -232,6 +270,14 @@ class MainViewModel(
     fun toggleCartItemVisibility(id: String) {
         viewModelScope.launch {
             val updated = cartItems.value.map { if (it.id == id) it.copy(visible = !it.visible) else it }
+            repository.saveCartItems(updated)
+            repository.pushCartToPhone(updated)
+        }
+    }
+
+    fun toggleCartItemPriceUncertain(id: String) {
+        viewModelScope.launch {
+            val updated = cartItems.value.map { if (it.id == id) it.copy(priceUncertain = !it.priceUncertain) else it }
             repository.saveCartItems(updated)
             repository.pushCartToPhone(updated)
         }
@@ -261,6 +307,22 @@ class MainViewModel(
         }
     }
 
+    fun toggleBudgetEntryVisibility(id: String) {
+        viewModelScope.launch {
+            val updated = budgetEntries.value.map { if (it.id == id) it.copy(visible = !it.visible) else it }
+            repository.saveBudgetEntries(updated)
+            repository.pushBudgetToPhone(updated)
+        }
+    }
+
+    fun removeBudgetEntry(id: String) {
+        viewModelScope.launch {
+            val updated = budgetEntries.value.filter { it.id != id }
+            repository.saveBudgetEntries(updated)
+            repository.pushBudgetToPhone(updated)
+        }
+    }
+
     fun clearError() {
         _errorMessage.value = null
     }
@@ -268,6 +330,7 @@ class MainViewModel(
     private fun clearProcessing() {
         _isProcessingCart.value = false
         _isProcessingWishlist.value = false
+        _isProcessingBudget.value = false
     }
 
     override fun onCleared() {

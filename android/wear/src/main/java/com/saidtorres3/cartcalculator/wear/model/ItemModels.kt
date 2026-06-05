@@ -18,6 +18,13 @@ data class WishlistItem(
     val visible: Boolean
 )
 
+data class BudgetEntry(
+    val id: String,
+    val name: String,
+    val amount: String,
+    val visible: Boolean
+)
+
 fun List<CartItem>.toJsonString(): String {
     val arr = JSONArray()
     forEach { item ->
@@ -74,6 +81,37 @@ fun wishlistItemsFromJson(json: String): List<WishlistItem> {
             WishlistItem(
                 id = obj.optString("id", ""),
                 product = obj.optString("product", ""),
+                visible = obj.optBoolean("visible", true)
+            )
+        }
+    } catch (e: Exception) {
+        emptyList()
+    }
+}
+
+fun List<BudgetEntry>.budgetEntriesToJsonString(): String {
+    val arr = JSONArray()
+    forEach { item ->
+        arr.put(JSONObject().apply {
+            put("id", item.id)
+            put("name", item.name)
+            put("amount", item.amount)
+            put("visible", item.visible)
+        })
+    }
+    return arr.toString()
+}
+
+fun budgetEntriesFromJson(json: String): List<BudgetEntry> {
+    if (json.isBlank()) return emptyList()
+    return try {
+        val arr = JSONArray(json)
+        (0 until arr.length()).map { i ->
+            val obj = arr.getJSONObject(i)
+            BudgetEntry(
+                id = obj.optString("id", ""),
+                name = obj.optString("name", ""),
+                amount = obj.optString("amount", "0"),
                 visible = obj.optBoolean("visible", true)
             )
         }

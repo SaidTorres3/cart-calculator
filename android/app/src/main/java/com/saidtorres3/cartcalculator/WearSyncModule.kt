@@ -47,6 +47,8 @@ class WearSyncModule(private val reactContext: ReactApplicationContext) :
         const val PATH_UPDATE_WISHLIST = "/update_wishlist"
         const val PATH_ADD_CART_ITEMS = "/add_cart_items"
         const val PATH_ADD_WISHLIST_ITEMS = "/add_wishlist_items"
+        const val PATH_UPDATE_BUDGET = "/update_budget"
+        const val PATH_ADD_BUDGET_ITEMS = "/add_budget_items"
         const val EVENT_WEAR_DATA_UPDATED = "WearDataUpdated"
     }
 
@@ -101,6 +103,19 @@ class WearSyncModule(private val reactContext: ReactApplicationContext) :
                         putString("data", merged)
                     })
                 }
+                PATH_UPDATE_BUDGET -> {
+                    val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+                    val budgetJson = dataMap.getString("budget") ?: return@forEach
+                    Log.d(TAG, "onDataChanged: budget from watch (${budgetJson.length} chars) - merging")
+                    val merged = mergeBudgetJson(budgetJson)
+                    reactContext.applicationContext
+                        .getSharedPreferences(WearDataListenerService.PREFS_NAME, Context.MODE_PRIVATE)
+                        .edit().putString("watch_budget", merged).apply()
+                    emitEvent(EVENT_WEAR_DATA_UPDATED, Arguments.createMap().apply {
+                        putString("type", "budget")
+                        putString("data", merged)
+                    })
+                }
                 PATH_ADD_CART_ITEMS -> {
                     val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
                     val newItemsJson = dataMap.getString("cart") ?: return@forEach
@@ -129,6 +144,19 @@ class WearSyncModule(private val reactContext: ReactApplicationContext) :
                         putString("data", merged)
                     })
                 }
+                PATH_ADD_BUDGET_ITEMS -> {
+                    val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+                    val newItemsJson = dataMap.getString("budget") ?: return@forEach
+                    Log.d(TAG, "onDataChanged: ADD budget items from watch (${newItemsJson.length} chars)")
+                    val merged = appendBudgetJson(newItemsJson)
+                    reactContext.applicationContext
+                        .getSharedPreferences(WearDataListenerService.PREFS_NAME, Context.MODE_PRIVATE)
+                        .edit().putString("watch_budget", merged).apply()
+                    emitEvent(EVENT_WEAR_DATA_UPDATED, Arguments.createMap().apply {
+                        putString("type", "budget")
+                        putString("data", merged)
+                    })
+                }
             }
         }
     }
@@ -144,8 +172,8 @@ class WearSyncModule(private val reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun syncData(cartJson: String, wishlistJson: String, apiKey: String, model: String) {
-        Log.e(TAG, "syncData called: cart=${cartJson.length} chars, apiKey=${if (apiKey.isNotEmpty()) "SET (${apiKey.length} chars)" else "EMPTY"}")
+    fun syncData(cartJson: String, wishlistJson: String, apiKey: String, model: String, budgetEnabled: Boolean, budgetEntriesJson: String) {
+        Log.e(TAG, "syncData called: cart=${cartJson.length} chars, apiKey=${if (apiKey.isNotEmpty()) "SET (${apiKey.length} chars)" else "EMPTY"}, budgetEnabled=$budgetEnabled")
         val context: Context = reactContext.applicationContext
 
         // Mirror data into SharedPreferences so WearDataListenerService can
@@ -156,6 +184,8 @@ class WearSyncModule(private val reactContext: ReactApplicationContext) :
             it.putString(WearDataListenerService.KEY_WISHLIST, wishlistJson)
             it.putString(WearDataListenerService.KEY_API_KEY, apiKey)
             it.putString(WearDataListenerService.KEY_MODEL, model)
+            it.putBoolean("budgetEnabled", budgetEnabled)
+            it.putString("budgetEntries", budgetEntriesJson)
             it.apply()
         }
 
@@ -165,6 +195,8 @@ class WearSyncModule(private val reactContext: ReactApplicationContext) :
                 dataMap.putString("wishlist", wishlistJson)
                 dataMap.putString("apiKey", apiKey)
                 dataMap.putString("model", model)
+                dataMap.putBoolean("budgetEnabled", budgetEnabled)
+                dataMap.putString("budgetEntries", budgetEntriesJson)
                 dataMap.putLong("timestamp", System.currentTimeMillis())
             }.asPutDataRequest().setUrgent()
 
@@ -194,16 +226,19 @@ class WearSyncModule(private val reactContext: ReactApplicationContext) :
                 .getSharedPreferences(WearDataListenerService.PREFS_NAME, Context.MODE_PRIVATE)
             val cart = prefs.getString(WearDataListenerService.KEY_WATCH_CART, null)
             val wishlist = prefs.getString(WearDataListenerService.KEY_WATCH_WISHLIST, null)
+            val budget = prefs.getString("watch_budget", null)
             // Clear after reading so we don't re-apply stale updates on next foreground
-            if (cart != null || wishlist != null) {
+            if (cart != null || wishlist != null || budget != null) {
                 prefs.edit()
                     .remove(WearDataListenerService.KEY_WATCH_CART)
                     .remove(WearDataListenerService.KEY_WATCH_WISHLIST)
+                    .remove("watch_budget")
                     .apply()
             }
             val map = WritableNativeMap().apply {
                 putString("cart", cart)
                 putString("wishlist", wishlist)
+                putString("budget", budget)
             }
             promise.resolve(map)
         } catch (e: Exception) {
@@ -394,4 +429,79 @@ class WearSyncModule(private val reactContext: ReactApplicationContext) :
             newItemsJson
         }
     }
+
+    private fun mergeBudgetJson(incomingJson: String): String {
+        return try {
+            val existingJson = reactContext.applicationContext
+                .getSharedPreferences(WearDataListenerService.PREFS_NAME, Context.MODE_PRIVATE)
+                .getString("budgetEntries", null)
+                ?: return incomingJson
+
+            val existing = org.json.JSONArray(existingJson)
+            val incoming = org.json.JSONArray(incomingJson)
+
+            val existingById = mutableMapOf<String, org.json.JSONObject>()
+            for (i in 0 until existing.length()) {
+                val obj = existing.getJSONObject(i)
+                val id = obj.optString("id", "")
+                if (id.isNotEmpty()) existingById[id] = obj
+            }
+
+            val incomingIds = mutableSetOf<String>()
+            val result = org.json.JSONArray()
+
+            for (i in 0 until incoming.length()) {
+                val obj = incoming.getJSONObject(i)
+                val id = obj.optString("id", "")
+                if (id.isNotEmpty()) incomingIds.add(id)
+                result.put(obj)
+            }
+
+            for (i in 0 until existing.length()) {
+                val obj = existing.getJSONObject(i)
+                val id = obj.optString("id", "")
+                if (id.isNotEmpty() && id !in incomingIds) {
+                    result.put(obj)
+                }
+            }
+            result.toString()
+        } catch (e: Exception) {
+            incomingJson
+        }
+    }
+
+    private fun appendBudgetJson(newItemsJson: String): String {
+        return try {
+            val existingJson = reactContext.applicationContext
+                .getSharedPreferences(WearDataListenerService.PREFS_NAME, Context.MODE_PRIVATE)
+                .getString("budgetEntries", null)
+
+            if (existingJson.isNullOrBlank()) return newItemsJson
+
+            val existing = org.json.JSONArray(existingJson)
+            val newItems = org.json.JSONArray(newItemsJson)
+
+            val existingIds = mutableSetOf<String>()
+            for (i in 0 until existing.length()) {
+                val id = existing.getJSONObject(i).optString("id", "")
+                if (id.isNotEmpty()) existingIds.add(id)
+            }
+
+            val result = org.json.JSONArray()
+            for (i in 0 until newItems.length()) {
+                val obj = newItems.getJSONObject(i)
+                val id = obj.optString("id", "")
+                if (id.isNotEmpty() && id !in existingIds) {
+                    result.put(obj)
+                }
+            }
+            for (i in 0 until existing.length()) {
+                result.put(existing.getJSONObject(i))
+            }
+            result.toString()
+        } catch (e: Exception) {
+            newItemsJson
+        }
+    }
 }
+

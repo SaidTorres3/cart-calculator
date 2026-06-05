@@ -3,6 +3,7 @@ package com.saidtorres3.cartcalculator.wear.data
 import android.util.Base64
 import com.saidtorres3.cartcalculator.wear.model.CartItem
 import com.saidtorres3.cartcalculator.wear.model.WishlistItem
+import com.saidtorres3.cartcalculator.wear.model.BudgetEntry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -52,6 +53,17 @@ class GeminiService {
         Return only a JSON array or an empty array ([]) for random text.
     """.trimIndent()
 
+    private val BUDGET_EXTRACT_PROMPT = """
+        Extract budget entries from the spoken text and return a JSON array of objects with properties: name (string) and amount (float).
+        Rules:
+        - Each entry is a named money source or fund.
+        - Default amount = 0.0 if not mentioned.
+        Examples:
+        "tarjeta de mamá 120, efectivo 800" → [{"name":"Tarjeta de mamá","amount":120.0},{"name":"Efectivo","amount":800.0}]
+        "caja chica cincuenta pesos" → [{"name":"Caja chica","amount":50.0}]
+        Output: Return ONLY a JSON array or [] for unrecognizable input.
+    """.trimIndent()
+
     suspend fun extractCartItemsFromAudio(
         audioBase64: String,
         mimeType: String,
@@ -70,6 +82,16 @@ class GeminiService {
     ): List<WishlistItem> = withContext(Dispatchers.IO) {
         val responseText = callGemini(audioBase64, mimeType, WISHLIST_EXTRACT_PROMPT, apiKey, model)
         parseWishlistResponse(responseText)
+    }
+
+    suspend fun extractBudgetEntriesFromAudio(
+        audioBase64: String,
+        mimeType: String,
+        apiKey: String,
+        model: String
+    ): List<BudgetEntry> = withContext(Dispatchers.IO) {
+        val responseText = callGemini(audioBase64, mimeType, BUDGET_EXTRACT_PROMPT, apiKey, model)
+        parseBudgetResponse(responseText)
     }
 
     private fun callGemini(
@@ -162,6 +184,28 @@ class GeminiService {
                 WishlistItem(
                     id = UUID.randomUUID().toString(),
                     product = arr.getString(i),
+                    visible = true
+                )
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun parseBudgetResponse(rawText: String): List<BudgetEntry> {
+        if (rawText.isBlank()) return emptyList()
+        return try {
+            val clean = rawText
+                .replace(Regex("```json\\n?"), "")
+                .replace(Regex("```\\n?"), "")
+                .trim()
+            val arr = JSONArray(clean)
+            (0 until arr.length()).map { i ->
+                val obj = arr.getJSONObject(i)
+                BudgetEntry(
+                    id = UUID.randomUUID().toString(),
+                    name = obj.optString("name", "Budget"),
+                    amount = obj.optDouble("amount", 0.0).toString(),
                     visible = true
                 )
             }

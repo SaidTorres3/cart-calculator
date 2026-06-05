@@ -43,9 +43,9 @@ import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.dialog.Alert
 import androidx.wear.compose.material.dialog.Dialog
-import com.saidtorres3.cartcalculator.wear.model.WishlistItem
+import com.saidtorres3.cartcalculator.wear.model.BudgetEntry
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Delete
@@ -55,8 +55,8 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 @Composable
-fun WishlistScreen(
-    items: List<WishlistItem>,
+fun BudgetScreen(
+    entries: List<BudgetEntry>,
     isRecording: Boolean,
     isProcessing: Boolean,
     focused: Boolean,
@@ -89,7 +89,7 @@ fun WishlistScreen(
             Alert(
                 title = {
                     Text(
-                        text = "Delete item?",
+                        text = "Delete budget entry?",
                         textAlign = TextAlign.Center,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
@@ -150,7 +150,7 @@ fun WishlistScreen(
     ) {
         // Header row with title + mic button
         item {
-            WishlistHeader(
+            BudgetHeader(
                 isRecording = isRecording,
                 isProcessing = isProcessing,
                 onMicClick = onMicClick
@@ -158,18 +158,18 @@ fun WishlistScreen(
         }
 
         // Items list
-        if (items.isEmpty()) {
+        if (entries.isEmpty()) {
             item {
-                EmptyState(message = "Wishlist is empty\nTap mic to add items")
+                EmptyState(message = "Budget is empty\nTap mic to add entries")
             }
         } else {
-            items(items) { item ->
-                WishlistItemRow(
-                    item = item,
-                    onToggleVisibility = { onToggleVisibility(item.id) },
+            items(entries) { entry ->
+                BudgetEntryRow(
+                    entry = entry,
+                    onToggleVisibility = { onToggleVisibility(entry.id) },
                     onRemove = {
-                        itemToDeleteId = item.id
-                        itemToDeleteName = item.product
+                        itemToDeleteId = entry.id
+                        itemToDeleteName = entry.name
                         showDeleteDialog = true
                     }
                 )
@@ -179,7 +179,7 @@ fun WishlistScreen(
 }
 
 @Composable
-private fun WishlistHeader(
+private fun BudgetHeader(
     isRecording: Boolean,
     isProcessing: Boolean,
     onMicClick: () -> Unit
@@ -191,14 +191,14 @@ private fun WishlistHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = Icons.Default.Favorite,
-            contentDescription = "Wishlist",
-            tint = Color(0xFFFF4081),
+            imageVector = Icons.Default.AttachMoney,
+            contentDescription = "Budget",
+            tint = Color(0xFF4CAF50),
             modifier = Modifier.size(16.dp)
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
-            text = "Wishlist",
+            text = "Budget",
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colors.onSurface,
@@ -209,27 +209,34 @@ private fun WishlistHeader(
 }
 
 @Composable
-private fun WishlistItemRow(
-    item: WishlistItem,
+private fun BudgetEntryRow(
+    entry: BudgetEntry,
     onToggleVisibility: () -> Unit,
     onRemove: () -> Unit
 ) {
-    val alpha = if (item.visible) 1f else 0.4f
+    val alpha = if (entry.visible) 1f else 0.4f
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 3.dp, horizontal = 14.dp), // Added horizontal padding
+            .padding(vertical = 3.dp, horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = item.product,
-            fontSize = 13.sp,
-            color = MaterialTheme.colors.onSurface.copy(alpha = alpha),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            fontWeight = if (item.visible) FontWeight.Medium else FontWeight.Normal,
-            modifier = Modifier.weight(1f)
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = entry.name,
+                fontSize = 13.sp,
+                color = MaterialTheme.colors.onSurface.copy(alpha = alpha),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                fontWeight = if (entry.visible) FontWeight.Medium else FontWeight.Normal
+            )
+            Text(
+                text = "$${entry.amount}",
+                fontSize = 11.sp,
+                color = Color(0xFF4CAF50).copy(alpha = alpha),
+                fontWeight = FontWeight.Bold
+            )
+        }
         // Visibility toggle
         Button(
             onClick = onToggleVisibility,
@@ -239,7 +246,7 @@ private fun WishlistItemRow(
             )
         ) {
             Icon(
-                imageVector = if (item.visible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                imageVector = if (entry.visible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                 contentDescription = "Toggle",
                 modifier = Modifier.size(14.dp),
                 tint = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)

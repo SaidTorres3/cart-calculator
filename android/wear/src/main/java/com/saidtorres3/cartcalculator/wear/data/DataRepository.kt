@@ -1,6 +1,7 @@
 package com.saidtorres3.cartcalculator.wear.data
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -10,10 +11,13 @@ import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import com.saidtorres3.cartcalculator.wear.model.CartItem
 import com.saidtorres3.cartcalculator.wear.model.WishlistItem
+import com.saidtorres3.cartcalculator.wear.model.BudgetEntry
 import com.saidtorres3.cartcalculator.wear.model.cartItemsFromJson
 import com.saidtorres3.cartcalculator.wear.model.toJsonString
 import com.saidtorres3.cartcalculator.wear.model.wishlistItemsFromJson
 import com.saidtorres3.cartcalculator.wear.model.wishlistToJsonString
+import com.saidtorres3.cartcalculator.wear.model.budgetEntriesFromJson
+import com.saidtorres3.cartcalculator.wear.model.budgetEntriesToJsonString
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +35,8 @@ class DataRepository(private val context: Context) {
         val KEY_WISHLIST = stringPreferencesKey("wishlist_items")
         val KEY_API_KEY = stringPreferencesKey("api_key")
         val KEY_MODEL = stringPreferencesKey("selected_model")
+        val KEY_BUDGET_ENABLED = booleanPreferencesKey("budget_enabled")
+        val KEY_BUDGET_ENTRIES = stringPreferencesKey("budget_entries")
 
         // Wearable Data Layer paths
         const val PATH_SYNC = "/sync"
@@ -39,6 +45,8 @@ class DataRepository(private val context: Context) {
         const val PATH_UPDATE_WISHLIST = "/update_wishlist"
         const val PATH_ADD_CART_ITEMS = "/add_cart_items"
         const val PATH_ADD_WISHLIST_ITEMS = "/add_wishlist_items"
+        const val PATH_UPDATE_BUDGET = "/update_budget"
+        const val PATH_ADD_BUDGET_ITEMS = "/add_budget_items"
     }
 
     init {
@@ -61,17 +69,29 @@ class DataRepository(private val context: Context) {
         prefs[KEY_MODEL] ?: "gemini-2.5-flash-lite"
     }
 
+    val budgetEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[KEY_BUDGET_ENABLED] ?: false
+    }
+
+    val budgetEntries: Flow<List<BudgetEntry>> = context.dataStore.data.map { prefs ->
+        budgetEntriesFromJson(prefs[KEY_BUDGET_ENTRIES] ?: "")
+    }
+
     suspend fun updateFromSyncData(dataMap: DataMap) {
         val cart = dataMap.getString("cart") ?: ""
         val wishlist = dataMap.getString("wishlist") ?: ""
         val apiKey = dataMap.getString("apiKey") ?: ""
         val model = dataMap.getString("model") ?: ""
-        Log.d("DataRepository", "updateFromSyncData: cart=${cart.length} chars, wishlist=${wishlist.length} chars, apiKey=${if (apiKey.isNotEmpty()) "SET" else "EMPTY"}, model=$model")
+        val budgetEnabled = dataMap.getBoolean("budgetEnabled", false)
+        val budgetEntries = dataMap.getString("budgetEntries") ?: ""
+        Log.d("DataRepository", "updateFromSyncData: cart=${cart.length} chars, wishlist=${wishlist.length} chars, apiKey=${if (apiKey.isNotEmpty()) "SET" else "EMPTY"}, model=$model, budgetEnabled=$budgetEnabled")
         context.dataStore.edit { prefs ->
             prefs[KEY_CART] = cart
             prefs[KEY_WISHLIST] = wishlist
             prefs[KEY_API_KEY] = apiKey
             prefs[KEY_MODEL] = model
+            prefs[KEY_BUDGET_ENABLED] = budgetEnabled
+            prefs[KEY_BUDGET_ENTRIES] = budgetEntries
         }
     }
 
@@ -147,6 +167,44 @@ class DataRepository(private val context: Context) {
                 Log.d("DataRepository", "pushNewWishlistItemsToPhone: sent ${newItems.size} new items")
             } catch (e: Exception) {
                 Log.e("DataRepository", "pushNewWishlistItemsToPhone failed", e)
+            }
+        }
+    }
+
+    suspend fun saveBudgetEntries(entries: List<BudgetEntry>) {
+        context.dataStore.edit { prefs ->
+            prefs[KEY_BUDGET_ENTRIES] = entries.budgetEntriesToJsonString()
+        }
+    }
+
+    // Pushes updated budget entries to the phone via Wearable Data Layer
+    fun pushBudgetToPhone(entries: List<BudgetEntry>) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val request = PutDataMapRequest.create(PATH_UPDATE_BUDGET).apply {
+                    dataMap.putString("budget", entries.budgetEntriesToJsonString())
+                    dataMap.putLong("timestamp", System.currentTimeMillis())
+                }.asPutDataRequest().setUrgent()
+                Tasks.await(Wearable.getDataClient(context).putDataItem(request))
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    // Pushes ONLY new budget entries to the phone
+    fun pushNewBudgetEntriesToPhone(newEntries: List<BudgetEntry>) {
+        if (newEntries.isEmpty()) return
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val request = PutDataMapRequest.create(PATH_ADD_BUDGET_ITEMS).apply {
+                    dataMap.putString("budget", newEntries.budgetEntriesToJsonString())
+                    dataMap.putLong("timestamp", System.currentTimeMillis())
+                }.asPutDataRequest().setUrgent()
+                Tasks.await(Wearable.getDataClient(context).putDataItem(request))
+                Log.d("DataRepository", "pushNewBudgetEntriesToPhone: sent ${newEntries.size} new entries")
+            } catch (e: Exception) {
+                Log.e("DataRepository", "pushNewBudgetEntriesToPhone failed", e)
             }
         }
     }

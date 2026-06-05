@@ -37,6 +37,7 @@ import androidx.wear.compose.material.VignettePosition
 import com.saidtorres3.cartcalculator.wear.data.DataRepository
 import com.saidtorres3.cartcalculator.wear.ui.CartScreen
 import com.saidtorres3.cartcalculator.wear.ui.WishlistScreen
+import com.saidtorres3.cartcalculator.wear.ui.BudgetScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -71,18 +72,23 @@ class MainActivity : ComponentActivity() {
 private fun WearAppContent(viewModel: MainViewModel) {
     val cartItems by viewModel.cartItems.collectAsState()
     val wishlistItems by viewModel.wishlistItems.collectAsState()
+    val budgetEntries by viewModel.budgetEntries.collectAsState()
+    val budgetEnabled by viewModel.budgetEnabled.collectAsState()
     val isRecordingCart by viewModel.isRecordingCart.collectAsState()
     val isRecordingWishlist by viewModel.isRecordingWishlist.collectAsState()
+    val isRecordingBudget by viewModel.isRecordingBudget.collectAsState()
     val isProcessingCart by viewModel.isProcessingCart.collectAsState()
     val isProcessingWishlist by viewModel.isProcessingWishlist.collectAsState()
+    val isProcessingBudget by viewModel.isProcessingBudget.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
 
-    val pagerState = rememberPagerState(pageCount = { 2 })
+    val pageCount = if (budgetEnabled) 3 else 2
+    val pagerState = rememberPagerState(pageCount = { pageCount })
 
     val pageIndicatorState = object : PageIndicatorState {
         override val pageOffset: Float get() = pagerState.currentPageOffsetFraction
         override val selectedPage: Int get() = pagerState.currentPage
-        override val pageCount: Int get() = 2
+        override val pageCount: Int get() = pageCount
     }
 
     MaterialTheme {
@@ -104,12 +110,15 @@ private fun WearAppContent(viewModel: MainViewModel) {
                     when (page) {
                         0 -> CartScreen(
                             items = cartItems,
+                            budgetEnabled = budgetEnabled,
+                            budgetEntries = budgetEntries,
                             isRecording = isRecordingCart,
                             isProcessing = isProcessingCart,
                             focused = pagerState.currentPage == 0,
                             onMicClick = { viewModel.toggleCartRecording() },
                             onToggleVisibility = { viewModel.toggleCartItemVisibility(it) },
-                            onRemove = { viewModel.removeCartItem(it) }
+                            onRemove = { viewModel.removeCartItem(it) },
+                            onTogglePriceUncertain = { viewModel.toggleCartItemPriceUncertain(it) }
                         )
                         1 -> WishlistScreen(
                             items = wishlistItems,
@@ -120,6 +129,17 @@ private fun WearAppContent(viewModel: MainViewModel) {
                             onToggleVisibility = { viewModel.toggleWishlistItemVisibility(it) },
                             onRemove = { viewModel.removeWishlistItem(it) }
                         )
+                        2 -> if (budgetEnabled) {
+                            BudgetScreen(
+                                entries = budgetEntries,
+                                isRecording = isRecordingBudget,
+                                isProcessing = isProcessingBudget,
+                                focused = pagerState.currentPage == 2,
+                                onMicClick = { viewModel.toggleBudgetRecording() },
+                                onToggleVisibility = { viewModel.toggleBudgetEntryVisibility(it) },
+                                onRemove = { viewModel.removeBudgetEntry(it) }
+                            )
+                        }
                     }
                 }
 
