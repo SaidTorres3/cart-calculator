@@ -59,5 +59,8 @@
   "deleteAllEverythingConfirm": "您确定要删除购物清单、心愿单和预算中的所有项目吗？",
   "success": "成功",
   "allDataCleared": "所有数据已清除。",
-  "failedToClearData": "清除数据失败。"
+  "failedToClearData": "清除数据失败。",
+  "done": "完成",
+  "aiConfiguration": "AI 配置",
+  "preferences": "偏好"
 }

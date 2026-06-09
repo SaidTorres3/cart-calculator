@@ -21,7 +21,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import * as SplashScreen from "expo-splash-screen";
 import { MaterialIcons } from "@expo/vector-icons";
 import LLMChat from "./LLMChat";
-import SettingsModal from "./SettingsModal";
+import SettingsView from "./SettingsView";
 import ApiKeyModal from "./ApiKeyModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiKey, LLM_CHAT_ENABLED, initApiKey, clearApiKey, setApiKey, getApiProvider, setApiProvider, initApiProvider } from "../config";
@@ -70,10 +70,9 @@ export default function Index() {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [activeScreen, setActiveScreen] = useState<
-    "shoppingList" | "wishlist" | "budget" | "llmChat"
+    "shoppingList" | "wishlist" | "budget" | "llmChat" | "settings"
   >("shoppingList");
-  const [selectedModel, setSelectedModel] = useState<string>("gemini-2.5-flash-lite");
-  const [configVisible, setConfigVisible] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<string>("gemini-3.1-flash-lite-preview");
   const [autoHideWishlistOnAdd, setAutoHideWishlistOnAdd] = useState(true);
   const [budgetEnabled, setBudgetEnabled] = useState(false);
   const [apiKeyModalVisible, setApiKeyModalVisible] = useState(false);
@@ -99,6 +98,7 @@ export default function Index() {
   const switchToNext = useCallback(() => {
     hideKeyboard();
     setActiveScreen((prev) => {
+      if (prev === "settings") return prev;
       const currentIndex = screens.indexOf(prev);
       return currentIndex < screens.length - 1
         ? screens[currentIndex + 1]
@@ -109,6 +109,7 @@ export default function Index() {
   const switchToPrev = useCallback(() => {
     hideKeyboard();
     setActiveScreen((prev) => {
+      if (prev === "settings") return prev;
       const currentIndex = screens.indexOf(prev);
       return currentIndex > 0 ? screens[currentIndex - 1] : prev;
     });
@@ -410,9 +411,13 @@ export default function Index() {
         <TouchableOpacity
           style={styles.settingsButton}
           onPressIn={hideKeyboard}
-          onPress={() => setConfigVisible(true)}
+          onPress={() => setActiveScreen("settings")}
         >
-          <MaterialIcons name="settings" size={24} color="white" />
+          <MaterialIcons 
+            name="settings" 
+            size={24} 
+            color={activeScreen === "settings" ? "#64B5F6" : "white"} 
+          />
         </TouchableOpacity>
       </View>
       {activeScreen === "shoppingList" ? (
@@ -435,23 +440,24 @@ export default function Index() {
           onRequireApiKey={requireApiKey} 
           onRefreshAll={handleRefreshAll}
         />
-      ) : LLM_CHAT_ENABLED ? (
+      ) : activeScreen === "llmChat" && LLM_CHAT_ENABLED ? (
         <LLMChat selectedModel={selectedModel} onRequireApiKey={requireApiKey} />
+      ) : activeScreen === "settings" ? (
+        <SettingsView
+          onClose={() => setActiveScreen("shoppingList")}
+          selectedModel={selectedModel}
+          onSelectModel={handleSelectModel}
+          apiProvider={apiProvider}
+          onSelectApiProvider={handleSelectApiProvider}
+          autoHideWishlistOnAdd={autoHideWishlistOnAdd}
+          onToggleAutoHide={toggleAutoHide}
+          budgetEnabled={budgetEnabled}
+          onToggleBudget={toggleBudget}
+          onClearApiKey={handleClearApiKey}
+          onAddApiKey={() => setApiKeyModalVisible(true)}
+          hasApiKey={!!getApiKey()}
+        />
       ) : null}
-      <SettingsModal
-        visible={configVisible}
-        onClose={() => setConfigVisible(false)}
-        selectedModel={selectedModel}
-        onSelectModel={handleSelectModel}
-        apiProvider={apiProvider}
-        onSelectApiProvider={handleSelectApiProvider}
-        autoHideWishlistOnAdd={autoHideWishlistOnAdd}
-        onToggleAutoHide={toggleAutoHide}
-        budgetEnabled={budgetEnabled}
-        onToggleBudget={toggleBudget}
-        onClearApiKey={handleClearApiKey}
-        onAddApiKey={() => setApiKeyModalVisible(true)}
-      />
       <ApiKeyModal
         visible={apiKeyModalVisible}
         onClose={() => {

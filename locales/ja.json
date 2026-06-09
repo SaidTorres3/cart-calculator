@@ -59,5 +59,8 @@
   "deleteAllEverythingConfirm": "ショッピングリスト、ウィッシュリスト、および予算のすべてのアイテムを削除してもよろしいですか？",
   "success": "成功",
   "allDataCleared": "すべてのデータが消去されました。",
-  "failedToClearData": "データの消去に失敗しました。"
+  "failedToClearData": "データの消去に失敗しました。",
+  "done": "完了",
+  "aiConfiguration": "AI設定",
+  "preferences": "設定"
 }

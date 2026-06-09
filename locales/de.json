@@ -59,5 +59,8 @@
   "deleteAllEverythingConfirm": "Sind Sie sicher, dass Sie alle Artikel aus Einkaufsliste, Wunschliste und Budget löschen möchten?",
   "success": "Erfolg",
   "allDataCleared": "Alle Daten wurden gelöscht.",
-  "failedToClearData": "Fehler beim Löschen der Daten."
+  "failedToClearData": "Fehler beim Löschen der Daten.",
+  "done": "Fertig",
+  "aiConfiguration": "KI-Konfiguration",
+  "preferences": "Präferenzen"
 }

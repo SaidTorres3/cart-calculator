@@ -60,7 +60,7 @@ class MainViewModel(
         .stateIn(viewModelScope, SharingStarted.Eagerly, "vertex")
 
     val selectedModel: StateFlow<String> = repository.selectedModel
-        .stateIn(viewModelScope, SharingStarted.Eagerly, "gemini-2.5-flash-lite")
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "gemini-3.1-flash-lite-preview")
 
     private val _activeScreen = MutableStateFlow(ActiveScreen.CART)
     val activeScreen: StateFlow<ActiveScreen> = _activeScreen.asStateFlow()

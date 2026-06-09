@@ -59,5 +59,8 @@
   "deleteAllEverythingConfirm": "Are you sure you want to delete all items from Shopping List, Wishlist, and Budget?",
   "success": "Success",
   "allDataCleared": "All data has been cleared.",
-  "failedToClearData": "Failed to clear data."
+  "failedToClearData": "Failed to clear data.",
+  "done": "Done",
+  "aiConfiguration": "AI Configuration",
+  "preferences": "Preferences"
 }

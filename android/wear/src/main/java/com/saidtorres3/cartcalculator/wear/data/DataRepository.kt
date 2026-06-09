@@ -71,7 +71,7 @@ class DataRepository(private val context: Context) {
     }
 
     val selectedModel: Flow<String> = context.dataStore.data.map { prefs ->
-        prefs[KEY_MODEL] ?: "gemini-2.5-flash-lite"
+        prefs[KEY_MODEL] ?: "gemini-3.1-flash-lite-preview"
     }
 
     val budgetEnabled: Flow<Boolean> = context.dataStore.data.map { prefs ->

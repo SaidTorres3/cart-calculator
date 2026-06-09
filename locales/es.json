@@ -59,5 +59,8 @@
   "deleteAllEverythingConfirm": "¿Estás seguro de que quieres borrar todos los artículos de la Lista de Compras, Lista de Deseos y Presupuesto?",
   "success": "Éxito",
   "allDataCleared": "Todos los datos han sido borrados.",
-  "failedToClearData": "Error al borrar los datos."
+  "failedToClearData": "Error al borrar los datos.",
+  "done": "Listo",
+  "aiConfiguration": "Configuración de IA",
+  "preferences": "Preferencias"
 }
