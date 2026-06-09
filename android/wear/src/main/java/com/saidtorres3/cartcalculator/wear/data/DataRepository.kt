@@ -38,6 +38,7 @@ class DataRepository(private val context: Context) {
         val KEY_BUDGET_ENABLED = booleanPreferencesKey("budget_enabled")
         val KEY_BUDGET_ENTRIES = stringPreferencesKey("budget_entries")
         val KEY_API_PROVIDER = stringPreferencesKey("api_provider")
+        val KEY_AUTO_HIDE_WISHLIST = booleanPreferencesKey("auto_hide_wishlist")
 
         // Wearable Data Layer paths
         const val PATH_SYNC = "/sync"
@@ -82,6 +83,10 @@ class DataRepository(private val context: Context) {
         budgetEntriesFromJson(prefs[KEY_BUDGET_ENTRIES] ?: "")
     }
 
+    val autoHideWishlist: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[KEY_AUTO_HIDE_WISHLIST] ?: true
+    }
+
     suspend fun updateFromSyncData(dataMap: DataMap) {
         val cart = dataMap.getString("cart") ?: ""
         val wishlist = dataMap.getString("wishlist") ?: ""
@@ -90,7 +95,8 @@ class DataRepository(private val context: Context) {
         val budgetEnabled = dataMap.getBoolean("budgetEnabled", false)
         val budgetEntries = dataMap.getString("budgetEntries") ?: ""
         val apiProvider = dataMap.getString("apiProvider") ?: "vertex"
-        Log.d("DataRepository", "updateFromSyncData: cart=${cart.length} chars, wishlist=${wishlist.length} chars, apiKey=${if (apiKey.isNotEmpty()) "SET" else "EMPTY"}, model=$model, budgetEnabled=$budgetEnabled, apiProvider=$apiProvider")
+        val autoHideWishlist = dataMap.getBoolean("autoHideWishlist", true)
+        Log.d("DataRepository", "updateFromSyncData: cart=${cart.length} chars, wishlist=${wishlist.length} chars, apiKey=${if (apiKey.isNotEmpty()) "SET" else "EMPTY"}, model=$model, budgetEnabled=$budgetEnabled, apiProvider=$apiProvider, autoHideWishlist=$autoHideWishlist")
         context.dataStore.edit { prefs ->
             prefs[KEY_CART] = cart
             prefs[KEY_WISHLIST] = wishlist
@@ -99,6 +105,7 @@ class DataRepository(private val context: Context) {
             prefs[KEY_BUDGET_ENABLED] = budgetEnabled
             prefs[KEY_BUDGET_ENTRIES] = budgetEntries
             prefs[KEY_API_PROVIDER] = apiProvider
+            prefs[KEY_AUTO_HIDE_WISHLIST] = autoHideWishlist
         }
     }
 

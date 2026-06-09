@@ -62,6 +62,9 @@ class MainViewModel(
     val selectedModel: StateFlow<String> = repository.selectedModel
         .stateIn(viewModelScope, SharingStarted.Eagerly, "gemini-3.1-flash-lite-preview")
 
+    val autoHideWishlist: StateFlow<Boolean> = repository.autoHideWishlist
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
+
     private val _activeScreen = MutableStateFlow(ActiveScreen.CART)
     val activeScreen: StateFlow<ActiveScreen> = _activeScreen.asStateFlow()
 
@@ -230,6 +233,27 @@ class MainViewModel(
                             itemsMutex.withLock {
                                 val updated = newItems + cartItems.value
                                 repository.saveCartItems(updated)
+
+                                // Auto-hide wishlisted items if setting is enabled
+                                if (autoHideWishlist.value) {
+                                    val currentWishlist = wishlistItems.value
+                                    var wishlistUpdated = false
+                                    val newWishlist = currentWishlist.map { wishItem ->
+                                        val matchesAny = newItems.any { cartItem ->
+                                            matches(wishItem.product, cartItem.product)
+                                        }
+                                        if (matchesAny && wishItem.visible) {
+                                            wishlistUpdated = true
+                                            wishItem.copy(visible = false)
+                                        } else {
+                                            wishItem
+                                        }
+                                    }
+                                    if (wishlistUpdated) {
+                                        repository.saveWishlistItems(newWishlist)
+                                        repository.pushWishlistToPhone(newWishlist)
+                                    }
+                                }
                             }
                             // Use additive push: send ONLY the new items
                             // so the phone appends without risking data loss
@@ -341,6 +365,25 @@ class MainViewModel(
         super.onCleared()
         mediaRecorder?.release()
         mediaRecorder = null
+    }
+
+    private fun matches(wishlistProduct: String, cartProduct: String): Boolean {
+        val wp = wishlistProduct.lowercase().trim()
+        val cp = cartProduct.lowercase().trim()
+        if (wp.isEmpty() || cp.isEmpty()) return false
+        if (wp == cp || cp.contains(wp) || wp.contains(cp)) return true
+
+        // Word-based match (e.g. check if they share significant words)
+        val stopWords = setOf("de", "la", "el", "un", "una", "y", "con", "para", "en", "del", "al", "los", "las", "of", "the", "a", "an", "and", "with", "for", "in", "to")
+        val wpWords = wp.split(Regex("\\s+")).filter { it.length > 2 && it !in stopWords }.toSet()
+        val cpWords = cp.split(Regex("\\s+")).filter { it.length > 2 && it !in stopWords }.toSet()
+        if (wpWords.isNotEmpty() && cpWords.isNotEmpty()) {
+            val intersection = wpWords.intersect(cpWords)
+            if (intersection.isNotEmpty()) {
+                return true
+            }
+        }
+        return false
     }
 
     class Factory(

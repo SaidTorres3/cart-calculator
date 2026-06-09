@@ -37,6 +37,7 @@ export async function syncToWear(opts?: {
   budgetEnabled?: boolean;
   budgetEntriesJson?: string;
   apiProvider?: string;
+  autoHideWishlist?: boolean;
 }): Promise<void> {
   const WearSync = getWearSync();
   if (Platform.OS !== 'android' || !WearSync) {
@@ -45,7 +46,7 @@ export async function syncToWear(opts?: {
   }
 
   try {
-    const [cartRaw, wishlistRaw, modelRaw, apiKeyRaw, budgetEnabledRaw, budgetEntriesRaw, apiProviderRaw] = await Promise.all([
+    const [cartRaw, wishlistRaw, modelRaw, apiKeyRaw, budgetEnabledRaw, budgetEntriesRaw, apiProviderRaw, autoHideWishlistRaw] = await Promise.all([
       opts?.cartJson !== undefined
         ? Promise.resolve(opts.cartJson)
         : AsyncStorage.getItem(STORAGE_KEY_CART).then((v) => v ?? '[]'),
@@ -67,10 +68,13 @@ export async function syncToWear(opts?: {
       opts?.apiProvider !== undefined
         ? Promise.resolve(opts.apiProvider)
         : AsyncStorage.getItem('GEMINI_API_PROVIDER').then((v) => v ?? getApiProvider() ?? 'vertex'),
+      opts?.autoHideWishlist !== undefined
+        ? Promise.resolve(opts.autoHideWishlist)
+        : AsyncStorage.getItem('AUTO_HIDE_WISHLIST_ON_ADD').then((v) => v !== 'false'),
     ]);
 
-    console.log('[WearSync] syncData: cart=' + cartRaw.length + ', apiKey=' + (apiKeyRaw ? 'SET' : 'EMPTY') + ', model=' + modelRaw + ', budgetEnabled=' + budgetEnabledRaw + ', apiProvider=' + apiProviderRaw);
-    WearSync.syncData(cartRaw, wishlistRaw, apiKeyRaw, modelRaw, budgetEnabledRaw, budgetEntriesRaw, apiProviderRaw);
+    console.log('[WearSync] syncData: cart=' + cartRaw.length + ', apiKey=' + (apiKeyRaw ? 'SET' : 'EMPTY') + ', model=' + modelRaw + ', budgetEnabled=' + budgetEnabledRaw + ', apiProvider=' + apiProviderRaw + ', autoHideWishlist=' + autoHideWishlistRaw);
+    WearSync.syncData(cartRaw, wishlistRaw, apiKeyRaw, modelRaw, budgetEnabledRaw, budgetEntriesRaw, apiProviderRaw, autoHideWishlistRaw);
   } catch (e) {
     // Non-critical: WearOS sync failures should not disrupt the main app.
     console.warn('[WearSync] sync failed:', e);

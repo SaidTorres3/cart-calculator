@@ -236,7 +236,8 @@ class WearDataListenerService : WearableListenerService() {
             val model = prefs.getString(KEY_MODEL, "") ?: ""
             val budgetEnabled = prefs.getBoolean("budgetEnabled", false)
             val budgetEntries = prefs.getString("budgetEntries", "[]") ?: "[]"
-            Log.d(TAG, "pushSyncToWatch: cart=${cart.length} chars, apiKey=${if (apiKey.isNotEmpty()) "set (${apiKey.length} chars)" else "EMPTY"}, budgetEnabled=$budgetEnabled")
+            val autoHideWishlist = prefs.getBoolean("autoHideWishlist", true)
+            Log.d(TAG, "pushSyncToWatch: cart=${cart.length} chars, apiKey=${if (apiKey.isNotEmpty()) "set (${apiKey.length} chars)" else "EMPTY"}, budgetEnabled=$budgetEnabled, autoHideWishlist=$autoHideWishlist")
 
             val request = PutDataMapRequest.create(WearSyncModule.PATH_SYNC).apply {
                 dataMap.putString("cart", cart)
@@ -245,6 +246,7 @@ class WearDataListenerService : WearableListenerService() {
                 dataMap.putString("model", model)
                 dataMap.putBoolean("budgetEnabled", budgetEnabled)
                 dataMap.putString("budgetEntries", budgetEntries)
+                dataMap.putBoolean("autoHideWishlist", autoHideWishlist)
                 dataMap.putLong("timestamp", System.currentTimeMillis())
             }.asPutDataRequest().setUrgent()
 

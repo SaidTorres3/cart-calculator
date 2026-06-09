@@ -132,6 +132,7 @@ export default function Index() {
     const newValue = !autoHideWishlistOnAdd;
     setAutoHideWishlistOnAdd(newValue);
     await AsyncStorage.setItem('AUTO_HIDE_WISHLIST_ON_ADD', newValue.toString());
+    syncToWear({ autoHideWishlist: newValue });
   };
 
   const toggleBudget = async () => {
