@@ -18,7 +18,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system/legacy";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getApiKey } from "../config";
+import { getApiKey, getApiProvider } from "../config";
 import { GoogleGenAI } from "@google/genai";
 import { supportsThinkingConfig } from "../utils/aiUtils";
 import { syncToWear } from "../utils/wearSync";
@@ -174,7 +174,7 @@ const Wishlist: React.FC<WishlistProps> = ({ selectedModel, onRequireApiKey, onR
           onRequireApiKey();
           return;
         }
-        const genAI = new GoogleGenAI({ vertexai: true, apiKey: getApiKey() });
+        const genAI = new GoogleGenAI({ vertexai: getApiProvider() === 'vertex', apiKey: getApiKey() });
 
         const aiParams: any = {
           model: selectedModel,

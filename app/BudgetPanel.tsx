@@ -20,7 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import { GoogleGenAI } from '@google/genai';
-import { getApiKey } from '../config';
+import { getApiKey, getApiProvider } from '../config';
 import { supportsThinkingConfig } from '../utils/aiUtils';
 import { syncToWear } from '../utils/wearSync';
 
@@ -196,7 +196,7 @@ const Budget: React.FC<BudgetProps> = ({ selectedModel, onRequireApiKey, onRefre
       const base64Audio = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
-      const genAI = new GoogleGenAI({ vertexai: true, apiKey: getApiKey() });
+      const genAI = new GoogleGenAI({ vertexai: getApiProvider() === 'vertex', apiKey: getApiKey() });
       const aiParams: any = {
         model: selectedModel,
         contents: [

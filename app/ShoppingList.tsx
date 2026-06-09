@@ -20,7 +20,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system/legacy";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getApiKey } from "../config";
+import { getApiKey, getApiProvider } from "../config";
 import { GoogleGenAI } from "@google/genai";
 import { supportsThinkingConfig } from "../utils/aiUtils";
 import { syncToWear } from "../utils/wearSync";
@@ -81,7 +81,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
       return wishlist;
     }
     try {
-      const genAI = new GoogleGenAI({ vertexai: true, apiKey: getApiKey() });
+      const genAI = new GoogleGenAI({ vertexai: getApiProvider() === 'vertex', apiKey: getApiKey() });
       const prompt =
         'You will receive a JSON array called WISHLIST and another array NEW_ITEMS. ' +
         'For every entry in NEW_ITEMS, if a semantically equivalent product exists in WISHLIST, ' +
@@ -278,7 +278,7 @@ const ShoppingList: React.FC<ShoppingListProps> = ({
           onRequireApiKey();
           return;
         }
-        const genAI = new GoogleGenAI({ vertexai: true, apiKey: getApiKey() });
+        const genAI = new GoogleGenAI({ vertexai: getApiProvider() === 'vertex', apiKey: getApiKey() });
 
         const aiParams: any = {
           model: selectedModel,

@@ -56,6 +56,9 @@ class MainViewModel(
     val apiKey: StateFlow<String> = repository.apiKeyFlow
         .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
+    val apiProvider: StateFlow<String> = repository.apiProviderFlow
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "vertex")
+
     val selectedModel: StateFlow<String> = repository.selectedModel
         .stateIn(viewModelScope, SharingStarted.Eagerly, "gemini-2.5-flash-lite")
 
@@ -215,11 +218,12 @@ class MainViewModel(
                 val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
                 val key = apiKey.value
                 val model = selectedModel.value
+                val provider = apiProvider.value
 
                 when (target) {
                     RecordingTarget.CART -> {
                         val newItems = geminiService.extractCartItemsFromAudio(
-                            base64, "audio/mp4", key, model
+                            base64, "audio/mp4", key, model, provider
                         )
                         if (newItems.isNotEmpty()) {
                             // Mutex ensures we read the latest state and write atomically
@@ -234,7 +238,7 @@ class MainViewModel(
                     }
                     RecordingTarget.WISHLIST -> {
                         val newItems = geminiService.extractWishlistItemsFromAudio(
-                            base64, "audio/mp4", key, model
+                            base64, "audio/mp4", key, model, provider
                         )
                         if (newItems.isNotEmpty()) {
                             // Mutex ensures we read the latest state and write atomically
@@ -248,7 +252,7 @@ class MainViewModel(
                     }
                     RecordingTarget.BUDGET -> {
                         val newEntries = geminiService.extractBudgetEntriesFromAudio(
-                            base64, "audio/mp4", key, model
+                            base64, "audio/mp4", key, model, provider
                         )
                         if (newEntries.isNotEmpty()) {
                             itemsMutex.withLock {

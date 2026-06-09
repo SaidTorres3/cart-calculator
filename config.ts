@@ -6,6 +6,7 @@ const ENV_GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
 const LLM_CHAT_ENABLED_ENV = process.env.EXPO_PUBLIC_LLM_CHAT_ENABLED;
 
 let apiKey = ENV_GEMINI_API_KEY;
+let apiProvider = 'vertex';
 
 export const getApiKey = () => apiKey;
 export const setApiKey = (key: string) => {
@@ -15,10 +16,25 @@ export const clearApiKey = () => {
   apiKey = '';
 };
 
+export const getApiProvider = () => apiProvider;
+export const setApiProvider = (provider: string) => {
+  apiProvider = provider;
+};
+export const clearApiProvider = () => {
+  apiProvider = 'vertex';
+};
+
 export const initApiKey = async () => {
   const stored = await AsyncStorage.getItem('GEMINI_API_KEY');
   if (stored) {
     apiKey = stored;
+  }
+};
+
+export const initApiProvider = async () => {
+  const stored = await AsyncStorage.getItem('GEMINI_API_PROVIDER');
+  if (stored) {
+    apiProvider = stored;
   }
 };
 

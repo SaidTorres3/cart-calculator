@@ -37,6 +37,7 @@ class DataRepository(private val context: Context) {
         val KEY_MODEL = stringPreferencesKey("selected_model")
         val KEY_BUDGET_ENABLED = booleanPreferencesKey("budget_enabled")
         val KEY_BUDGET_ENTRIES = stringPreferencesKey("budget_entries")
+        val KEY_API_PROVIDER = stringPreferencesKey("api_provider")
 
         // Wearable Data Layer paths
         const val PATH_SYNC = "/sync"
@@ -65,6 +66,10 @@ class DataRepository(private val context: Context) {
         prefs[KEY_API_KEY] ?: ""
     }
 
+    val apiProviderFlow: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_API_PROVIDER] ?: "vertex"
+    }
+
     val selectedModel: Flow<String> = context.dataStore.data.map { prefs ->
         prefs[KEY_MODEL] ?: "gemini-2.5-flash-lite"
     }
@@ -84,7 +89,8 @@ class DataRepository(private val context: Context) {
         val model = dataMap.getString("model") ?: ""
         val budgetEnabled = dataMap.getBoolean("budgetEnabled", false)
         val budgetEntries = dataMap.getString("budgetEntries") ?: ""
-        Log.d("DataRepository", "updateFromSyncData: cart=${cart.length} chars, wishlist=${wishlist.length} chars, apiKey=${if (apiKey.isNotEmpty()) "SET" else "EMPTY"}, model=$model, budgetEnabled=$budgetEnabled")
+        val apiProvider = dataMap.getString("apiProvider") ?: "vertex"
+        Log.d("DataRepository", "updateFromSyncData: cart=${cart.length} chars, wishlist=${wishlist.length} chars, apiKey=${if (apiKey.isNotEmpty()) "SET" else "EMPTY"}, model=$model, budgetEnabled=$budgetEnabled, apiProvider=$apiProvider")
         context.dataStore.edit { prefs ->
             prefs[KEY_CART] = cart
             prefs[KEY_WISHLIST] = wishlist
@@ -92,6 +98,7 @@ class DataRepository(private val context: Context) {
             prefs[KEY_MODEL] = model
             prefs[KEY_BUDGET_ENABLED] = budgetEnabled
             prefs[KEY_BUDGET_ENTRIES] = budgetEntries
+            prefs[KEY_API_PROVIDER] = apiProvider
         }
     }
 

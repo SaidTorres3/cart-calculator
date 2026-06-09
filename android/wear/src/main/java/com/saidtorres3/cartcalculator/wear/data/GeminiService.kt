@@ -68,9 +68,10 @@ class GeminiService {
         audioBase64: String,
         mimeType: String,
         apiKey: String,
-        model: String
+        model: String,
+        apiProvider: String
     ): List<CartItem> = withContext(Dispatchers.IO) {
-        val responseText = callGemini(audioBase64, mimeType, CART_EXTRACT_PROMPT, apiKey, model)
+        val responseText = callGemini(audioBase64, mimeType, CART_EXTRACT_PROMPT, apiKey, model, apiProvider)
         parseCartResponse(responseText)
     }
 
@@ -78,9 +79,10 @@ class GeminiService {
         audioBase64: String,
         mimeType: String,
         apiKey: String,
-        model: String
+        model: String,
+        apiProvider: String
     ): List<WishlistItem> = withContext(Dispatchers.IO) {
-        val responseText = callGemini(audioBase64, mimeType, WISHLIST_EXTRACT_PROMPT, apiKey, model)
+        val responseText = callGemini(audioBase64, mimeType, WISHLIST_EXTRACT_PROMPT, apiKey, model, apiProvider)
         parseWishlistResponse(responseText)
     }
 
@@ -88,9 +90,10 @@ class GeminiService {
         audioBase64: String,
         mimeType: String,
         apiKey: String,
-        model: String
+        model: String,
+        apiProvider: String
     ): List<BudgetEntry> = withContext(Dispatchers.IO) {
-        val responseText = callGemini(audioBase64, mimeType, BUDGET_EXTRACT_PROMPT, apiKey, model)
+        val responseText = callGemini(audioBase64, mimeType, BUDGET_EXTRACT_PROMPT, apiKey, model, apiProvider)
         parseBudgetResponse(responseText)
     }
 
@@ -99,7 +102,8 @@ class GeminiService {
         mimeType: String,
         prompt: String,
         apiKey: String,
-        model: String
+        model: String,
+        apiProvider: String
     ): String {
         val requestBody = JSONObject().apply {
             put("contents", JSONArray().apply {
@@ -118,20 +122,30 @@ class GeminiService {
             })
         }.toString()
 
-        val modelPath = if (model.startsWith("publishers/") || model.startsWith("projects/") || model.startsWith("models/")) {
-            model
-        } else if (model.contains("/")) {
-            val parts = model.split("/")
-            "publishers/${parts[0]}/models/${parts[1]}"
+        val requestUrl = if (apiProvider == "google_ai_studio") {
+            val cleanModel = if (model.startsWith("models/")) model else "models/$model"
+            "https://generativelanguage.googleapis.com/v1beta1/$cleanModel:generateContent?key=$apiKey"
         } else {
-            "publishers/google/models/$model"
+            val modelPath = if (model.startsWith("publishers/") || model.startsWith("projects/") || model.startsWith("models/")) {
+                model
+            } else if (model.contains("/")) {
+                val parts = model.split("/")
+                "publishers/${parts[0]}/models/${parts[1]}"
+            } else {
+                "publishers/google/models/$model"
+            }
+            "https://aiplatform.googleapis.com/v1beta1/$modelPath:generateContent"
         }
 
-        val request = Request.Builder()
-            .url("https://aiplatform.googleapis.com/v1beta1/$modelPath:generateContent")
-            .header("x-goog-api-key", apiKey)
+        val requestBuilder = Request.Builder()
+            .url(requestUrl)
             .post(requestBody.toRequestBody("application/json".toMediaType()))
-            .build()
+
+        if (apiProvider != "google_ai_studio") {
+            requestBuilder.header("x-goog-api-key", apiKey)
+        }
+
+        val request = requestBuilder.build()
 
         val response = client.newCall(request).execute()
         val responseString = response.body?.string() ?: return ""

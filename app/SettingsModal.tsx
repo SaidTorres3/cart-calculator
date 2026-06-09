@@ -18,6 +18,8 @@ interface SettingsModalProps {
   onClose: () => void;
   selectedModel: string;
   onSelectModel: (model: string) => void;
+  apiProvider: string;
+  onSelectApiProvider: (provider: string) => void;
   autoHideWishlistOnAdd: boolean;
   onToggleAutoHide: () => void;
   budgetEnabled: boolean;
@@ -46,6 +48,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   selectedModel,
   onSelectModel,
+  apiProvider,
+  onSelectApiProvider,
   autoHideWishlistOnAdd,
   onToggleAutoHide,
   budgetEnabled,
@@ -79,6 +83,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             {MODELS.map((m) => (
               <Picker.Item label={m.label} value={m.value} key={m.value} />
             ))}
+          </Picker>
+          <Text style={styles.sectionTitle}>{t('selectApiProvider')}</Text>
+          <Picker
+            selectedValue={apiProvider}
+            onValueChange={(value) => onSelectApiProvider(value)}
+            style={styles.picker}
+            dropdownIconColor="#fff"
+          >
+            <Picker.Item label={t('vertexAI')} value="vertex" />
+            <Picker.Item label={t('googleAIStudio')} value="google_ai_studio" />
           </Picker>
           <Text style={styles.sectionTitle}>{t('selectLanguage')}</Text>
           <Picker

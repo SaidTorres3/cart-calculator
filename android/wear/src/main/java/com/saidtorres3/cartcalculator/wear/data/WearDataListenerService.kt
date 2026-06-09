@@ -42,7 +42,8 @@ class WearDataListenerService : WearableListenerService() {
                     val cart = dataMap.getString("cart") ?: ""
                     val apiKey = dataMap.getString("apiKey") ?: ""
                     val model = dataMap.getString("model") ?: ""
-                    Log.d(TAG, "Received /sync: cart=${cart.length} chars, apiKey=${if (apiKey.isNotEmpty()) "SET (${apiKey.length} chars)" else "EMPTY"}, model=$model")
+                    val apiProvider = dataMap.getString("apiProvider") ?: "vertex"
+                    Log.d(TAG, "Received /sync: cart=${cart.length} chars, apiKey=${if (apiKey.isNotEmpty()) "SET (${apiKey.length} chars)" else "EMPTY"}, model=$model, apiProvider=$apiProvider")
                     scope.launch {
                         repository.updateFromSyncData(dataMap)
                     }

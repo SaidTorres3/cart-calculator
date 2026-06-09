@@ -24,7 +24,7 @@ import LLMChat from "./LLMChat";
 import SettingsModal from "./SettingsModal";
 import ApiKeyModal from "./ApiKeyModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getApiKey, LLM_CHAT_ENABLED, initApiKey, clearApiKey, setApiKey } from "../config";
+import { getApiKey, LLM_CHAT_ENABLED, initApiKey, clearApiKey, setApiKey, getApiProvider, setApiProvider, initApiProvider } from "../config";
 import { syncToWear, getWatchUpdates } from "../utils/wearSync";
 import { useTranslation } from 'react-i18next';
 
@@ -78,6 +78,7 @@ export default function Index() {
   const [budgetEnabled, setBudgetEnabled] = useState(false);
   const [apiKeyModalVisible, setApiKeyModalVisible] = useState(false);
   const [apiKeyError, setApiKeyError] = useState(false);
+  const [apiProvider, setApiProviderState] = useState<string>("vertex");
   const { t } = useTranslation();
 
   const hideKeyboard = () => {
@@ -117,6 +118,13 @@ export default function Index() {
     setSelectedModel(model);
     await AsyncStorage.setItem('SELECTED_MODEL', model);
     syncToWear({ model });
+  };
+
+  const handleSelectApiProvider = async (provider: string) => {
+    setApiProviderState(provider);
+    await AsyncStorage.setItem('GEMINI_API_PROVIDER', provider);
+    setApiProvider(provider);
+    syncToWear({ apiProvider: provider });
   };
 
   const toggleAutoHide = async () => {
@@ -193,6 +201,9 @@ export default function Index() {
         console.log("[Index] prepare start");
         await initApiKey();
         console.log("[Index] initApiKey done");
+        await initApiProvider();
+        setApiProviderState(getApiProvider());
+        console.log("[Index] initApiProvider done");
         if (!getApiKey()) {
           console.log("[Index] No API key found, showing modal");
           setApiKeyModalVisible(true);
@@ -290,6 +301,11 @@ export default function Index() {
       const stored = await AsyncStorage.getItem('SELECTED_MODEL');
       if (stored) {
         setSelectedModel(stored);
+      }
+      const storedProvider = await AsyncStorage.getItem('GEMINI_API_PROVIDER');
+      if (storedProvider) {
+        setApiProviderState(storedProvider);
+        setApiProvider(storedProvider);
       }
       const hideSetting = await AsyncStorage.getItem('AUTO_HIDE_WISHLIST_ON_ADD');
       if (hideSetting !== null) {
@@ -427,6 +443,8 @@ export default function Index() {
         onClose={() => setConfigVisible(false)}
         selectedModel={selectedModel}
         onSelectModel={handleSelectModel}
+        apiProvider={apiProvider}
+        onSelectApiProvider={handleSelectApiProvider}
         autoHideWishlistOnAdd={autoHideWishlistOnAdd}
         onToggleAutoHide={toggleAutoHide}
         budgetEnabled={budgetEnabled}

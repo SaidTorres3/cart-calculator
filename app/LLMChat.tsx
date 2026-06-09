@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useTranslation } from 'react-i18next';
-import { getApiKey } from "../config";
+import { getApiKey, getApiProvider } from "../config";
 import { GoogleGenAI } from "@google/genai";
 import { supportsThinkingConfig } from "../utils/aiUtils";
 
@@ -41,7 +41,7 @@ const LLMChat: React.FC<LLMChatProps> = ({ selectedModel, onRequireApiKey }) => 
         onRequireApiKey();
         return;
       }
-      const genAI = new GoogleGenAI({ vertexai: true, apiKey: getApiKey() });
+      const genAI = new GoogleGenAI({ vertexai: getApiProvider() === 'vertex', apiKey: getApiKey() });
 
       const aiParams: any = {
         model: selectedModel,

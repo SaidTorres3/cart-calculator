@@ -10,7 +10,7 @@
  */
 import { NativeModules, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getApiKey } from '../config';
+import { getApiKey, getApiProvider } from '../config';
 
 // Access lazily so New Architecture TurboModules initialisation is complete
 function getWearSync() {
@@ -24,7 +24,7 @@ const STORAGE_KEY_API_KEY = 'GEMINI_API_KEY';
 const PREFS_NAME_WEAR = 'WearSyncPrefs';  // mirrors WearDataListenerService.PREFS_NAME
 
 /**
- * Syncs ALL current data (cart + wishlist + apiKey + model) to the WearOS app.
+ * Syncs ALL current data (cart + wishlist + apiKey + model + apiProvider) to the WearOS app.
  *
  * Accepts optional overrides so callers that already have the latest data in
  * memory can avoid re-reading from AsyncStorage.
@@ -36,6 +36,7 @@ export async function syncToWear(opts?: {
   model?: string;
   budgetEnabled?: boolean;
   budgetEntriesJson?: string;
+  apiProvider?: string;
 }): Promise<void> {
   const WearSync = getWearSync();
   if (Platform.OS !== 'android' || !WearSync) {
@@ -44,7 +45,7 @@ export async function syncToWear(opts?: {
   }
 
   try {
-    const [cartRaw, wishlistRaw, modelRaw, apiKeyRaw, budgetEnabledRaw, budgetEntriesRaw] = await Promise.all([
+    const [cartRaw, wishlistRaw, modelRaw, apiKeyRaw, budgetEnabledRaw, budgetEntriesRaw, apiProviderRaw] = await Promise.all([
       opts?.cartJson !== undefined
         ? Promise.resolve(opts.cartJson)
         : AsyncStorage.getItem(STORAGE_KEY_CART).then((v) => v ?? '[]'),
@@ -63,10 +64,13 @@ export async function syncToWear(opts?: {
       opts?.budgetEntriesJson !== undefined
         ? Promise.resolve(opts.budgetEntriesJson)
         : AsyncStorage.getItem('BUDGET_ENTRIES').then((v) => v ?? '[]'),
+      opts?.apiProvider !== undefined
+        ? Promise.resolve(opts.apiProvider)
+        : AsyncStorage.getItem('GEMINI_API_PROVIDER').then((v) => v ?? getApiProvider() ?? 'vertex'),
     ]);
 
-    console.log('[WearSync] syncData: cart=' + cartRaw.length + ', apiKey=' + (apiKeyRaw ? 'SET' : 'EMPTY') + ', model=' + modelRaw + ', budgetEnabled=' + budgetEnabledRaw);
-    WearSync.syncData(cartRaw, wishlistRaw, apiKeyRaw, modelRaw, budgetEnabledRaw, budgetEntriesRaw);
+    console.log('[WearSync] syncData: cart=' + cartRaw.length + ', apiKey=' + (apiKeyRaw ? 'SET' : 'EMPTY') + ', model=' + modelRaw + ', budgetEnabled=' + budgetEnabledRaw + ', apiProvider=' + apiProviderRaw);
+    WearSync.syncData(cartRaw, wishlistRaw, apiKeyRaw, modelRaw, budgetEnabledRaw, budgetEntriesRaw, apiProviderRaw);
   } catch (e) {
     // Non-critical: WearOS sync failures should not disrupt the main app.
     console.warn('[WearSync] sync failed:', e);

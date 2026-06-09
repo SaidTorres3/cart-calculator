@@ -172,8 +172,8 @@ class WearSyncModule(private val reactContext: ReactApplicationContext) :
     }
 
     @ReactMethod
-    fun syncData(cartJson: String, wishlistJson: String, apiKey: String, model: String, budgetEnabled: Boolean, budgetEntriesJson: String) {
-        Log.e(TAG, "syncData called: cart=${cartJson.length} chars, apiKey=${if (apiKey.isNotEmpty()) "SET (${apiKey.length} chars)" else "EMPTY"}, budgetEnabled=$budgetEnabled")
+    fun syncData(cartJson: String, wishlistJson: String, apiKey: String, model: String, budgetEnabled: Boolean, budgetEntriesJson: String, apiProvider: String) {
+        Log.e(TAG, "syncData called: cart=${cartJson.length} chars, apiKey=${if (apiKey.isNotEmpty()) "SET (${apiKey.length} chars)" else "EMPTY"}, budgetEnabled=$budgetEnabled, apiProvider=$apiProvider")
         val context: Context = reactContext.applicationContext
 
         // Mirror data into SharedPreferences so WearDataListenerService can
@@ -186,6 +186,7 @@ class WearSyncModule(private val reactContext: ReactApplicationContext) :
             it.putString(WearDataListenerService.KEY_MODEL, model)
             it.putBoolean("budgetEnabled", budgetEnabled)
             it.putString("budgetEntries", budgetEntriesJson)
+            it.putString("apiProvider", apiProvider)
             it.apply()
         }
 
@@ -197,6 +198,7 @@ class WearSyncModule(private val reactContext: ReactApplicationContext) :
                 dataMap.putString("model", model)
                 dataMap.putBoolean("budgetEnabled", budgetEnabled)
                 dataMap.putString("budgetEntries", budgetEntriesJson)
+                dataMap.putString("apiProvider", apiProvider)
                 dataMap.putLong("timestamp", System.currentTimeMillis())
             }.asPutDataRequest().setUrgent()
 
